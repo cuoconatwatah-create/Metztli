@@ -1,6 +1,6 @@
-# Metzlit 2.0
+# Metzlit
 
-Este es el repositorio principal del proyecto Metzlit 2.0.
+Este es el repositorio principal del proyecto Metzlit
 
 ## Estructura
 
