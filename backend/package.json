@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "En esta carpeta se encuentra el servidor, la lógica de negocio y las conexiones a bases de datos.",
+  "main": "index.js",
+  "devDependencies": {
+    "supabase": "^2.115.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

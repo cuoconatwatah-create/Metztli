@@ -113,6 +113,14 @@ export interface OfflineFAQ {
   audio_key: string;
 }
 
+export interface Myth {
+  id: string;
+  category: 'ciclo' | 'embarazo' | 'menopausia';
+  myth: string;
+  reality: string;
+}
+
+
 // ─────────────────────────────────────────────────────────
 // Datos de Embarazo Semana a Semana
 // ─────────────────────────────────────────────────────────
@@ -192,3 +200,32 @@ export interface KickCounterProps {
 export interface AlarmCardProps {
   municipality?: string;
 }
+
+// ─────────────────────────────────────────────────────────
+// BRÚJULA LUNAR (CYCLE TRACKER)
+// ─────────────────────────────────────────────────────────
+
+export type CycleFlowIntensity = 'light' | 'medium' | 'heavy' | null;
+
+export type CycleMoodTag =
+  | 'calm'
+  | 'sensitive'
+  | 'energetic'
+  | 'low'
+  | 'anxious'
+  | 'focused'
+  | 'irritated'
+  | 'happy'
+  | null;
+
+export interface UserCycleLog {
+  log_id: number;
+  local_uuid: string; // Para offline-first
+  date_logged: string; // YYYY-MM-DD
+  flow_intensity: CycleFlowIntensity;
+  cramps_level: number; // 0-5
+  stress_level: number; // 0-5
+  mood_tag: CycleMoodTag;
+  is_synced?: number; // 0 = no, 1 = yes
+}
+

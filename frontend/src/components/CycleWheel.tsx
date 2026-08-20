@@ -106,10 +106,6 @@ export default function CycleWheel({
             fill="#F4F1EA"
             stroke="#1A1A1A"
             strokeWidth={3}
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.25}
-            shadowRadius={3.84}
           />
           <SvgText
             x={center}

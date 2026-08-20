@@ -10,6 +10,7 @@ import GlassCard from '@/components/GlassCard';
 
 type RootStackParamList = {
   LanguageSelection: undefined;
+  Welcome: undefined;
   MainTabs: undefined;
 };
 
@@ -37,8 +38,10 @@ export default function LanguageSelectionScreen({ navigation }: Props) {
   };
 
   const handleContinue = () => {
-    // Navigate to MainTabs and replace the history
-    navigation.replace('MainTabs');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Welcome' }],
+    });
   };
 
   return (

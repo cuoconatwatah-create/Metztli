@@ -12,6 +12,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, Baby, Users, PhoneCall } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 // i18n initialization
 import '@/i18n';
@@ -19,13 +20,25 @@ import '@/i18n';
 // DB Initialization
 import { initializeDatabase } from '@/db/database';
 import { seedDatabase } from '@/db/seedData';
+import { supabase } from '@/lib/supabase';
 
 // Screens
 import LanguageSelectionScreen from '@/screens/LanguageSelectionScreen';
+import WelcomeScreen from '@/screens/WelcomeScreen';
+import PartnerDashboardScreen from '@/screens/PartnerDashboardScreen';
+import StageSelectionScreen from '@/screens/StageSelectionScreen';
+import TribuCodeScreen from '@/screens/TribuCodeScreen';
+import AuthScreen from '@/screens/AuthScreen';
 import HomeScreen from '@/screens/HomeScreen';
 import PregnancyScreen from '@/screens/PregnancyScreen';
 import ForumScreen from '@/screens/ForumScreen';
 import DirectoryScreen from '@/screens/DirectoryScreen';
+import { BrujulaLunarScreen } from '@/screens/BrujulaLunarScreen';
+import DesmitificadorScreen from '@/screens/DesmitificadorScreen';
+import PartnerMainScreen from '@/screens/PartnerMainScreen';
+import PregnancyTimelineScreen from '@/screens/PregnancyTimelineScreen';
+import KickCounterScreen from '@/screens/KickCounterScreen';
+import ObstetricAlarmScreen from '@/screens/ObstetricAlarmScreen';
 
 // Global UI Components
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -106,25 +119,51 @@ function MainTabs() {
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
-  const [initialRoute, setInitialRoute] = useState<'LanguageSelection' | 'MainTabs'>('LanguageSelection');
+  const [initialRoute, setInitialRoute] = useState<'LanguageSelection' | 'Welcome' | 'Auth' | 'MainTabs'>('LanguageSelection');
 
   useEffect(() => {
     async function prepare() {
       try {
-        // 1. Initialize SQLite Database
-        await initializeDatabase();
-        
-        // 2. Pre-seed offline data
-        await seedDatabase();
+        if (Platform.OS !== 'web') {
+          // 1. Initialize SQLite Database
+          await initializeDatabase();
+          
+          // 2. Pre-seed offline data
+          await seedDatabase();
 
-        // 3. Check if this is first launch
-        const hasLaunched = await SecureStore.getItemAsync('has_launched');
-        if (hasLaunched) {
-          setInitialRoute('MainTabs');
+          // 3. Check auth state
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          const hasLaunched = await SecureStore.getItemAsync('has_launched');
+          if (!hasLaunched) {
+            setInitialRoute('LanguageSelection');
+            await SecureStore.setItemAsync('has_launched', 'true');
+          } else if (session) {
+            setInitialRoute('MainTabs');
+          } else {
+            setInitialRoute('Welcome');
+          }
         } else {
-          setInitialRoute('LanguageSelection');
-          await SecureStore.setItemAsync('has_launched', 'true');
+          // Fallback for Web
+          const { data: { session } } = await supabase.auth.getSession();
+          const hasLaunched = localStorage.getItem('has_launched');
+          
+          if (!hasLaunched) {
+            setInitialRoute('LanguageSelection');
+            localStorage.setItem('has_launched', 'true');
+          } else if (session) {
+            setInitialRoute('MainTabs');
+          } else {
+            setInitialRoute('Welcome');
+          }
         }
+
+        // Setup Auth Listener
+        supabase.auth.onAuthStateChange((_event, session) => {
+          // We don't automatically redirect mid-app to avoid jarring UX during offline mode
+          // But this listener is active if needed.
+        });
+
       } catch (e) {
         console.warn('Initialization error:', e);
       } finally {
@@ -147,7 +186,18 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen name="PartnerDashboard" component={PartnerDashboardScreen} />
+        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="StageSelection" component={StageSelectionScreen} />
+        <Stack.Screen name="TribuCode" component={TribuCodeScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="BrujulaLunar" component={BrujulaLunarScreen} options={{ headerShown: true, title: 'Brújula Lunar' }} />
+        <Stack.Screen name="Desmitificador" component={DesmitificadorScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PartnerMain" component={PartnerMainScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="PregnancyTimeline" component={PregnancyTimelineScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="KickCounter" component={KickCounterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ObstetricAlarm" component={ObstetricAlarmScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

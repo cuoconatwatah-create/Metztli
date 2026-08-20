@@ -92,7 +92,7 @@ export default function KickCounter({ onSessionComplete }: KickCounterProps) {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{kickCount}</Text>
-            <Text style={styles.statLabel}>{t('kicks.kick_count', { count: '' }).trim()}</Text>
+            <Text style={styles.statLabel}>{t('kicks.kick_count', { count: kickCount }).trim()}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
