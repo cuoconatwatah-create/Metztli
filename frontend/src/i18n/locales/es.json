@@ -56,7 +56,10 @@
     "calculate": "Calcular",
     "kick_counter": "Contador de Pataditas",
     "danger_signs": "Sen\u0303ales de Peligro",
-    "prenatal_care": "Control Prenatal MINSA"
+    "prenatal_care": "Control Prenatal MINSA",
+    "setup_title": "Configurar Embarazo",
+    "edit_lmp": "Editar FUM",
+    "weekly_tips": "Tips de la Semana"
   },
   "kicks": {
     "title": "Contador de Pataditas",

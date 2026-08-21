@@ -161,9 +161,9 @@ export async function initializeDatabase(): Promise<void> {
 
 export async function getUserProfile(): Promise<UserProfile | null> {
   const database = await openDatabase();
-  const result = await database.getFirstAsync<UserProfile>(
+  const result = (await database.getFirstAsync(
     'SELECT * FROM user_profile WHERE id = 1'
-  );
+  )) as UserProfile | undefined;
   return result ?? null;
 }
 
@@ -210,18 +210,18 @@ export async function addCycle(
 
 export async function getCycles(limit: number = 12): Promise<Cycle[]> {
   const database = await openDatabase();
-  const results = await database.getAllAsync<Cycle>(
+  const results = (await database.getAllAsync(
     'SELECT * FROM cycles ORDER BY start_date DESC LIMIT ?',
     [limit]
-  );
+  )) as Cycle[];
   return results;
 }
 
 export async function getLastCycle(): Promise<Cycle | null> {
   const database = await openDatabase();
-  const result = await database.getFirstAsync<Cycle>(
+  const result = (await database.getFirstAsync(
     'SELECT * FROM cycles ORDER BY start_date DESC LIMIT 1'
-  );
+  )) as Cycle | undefined;
   return result ?? null;
 }
 
@@ -250,10 +250,10 @@ export async function addDailyLog(log: Omit<DailyLog, 'id'>): Promise<void> {
 
 export async function getDailyLog(date: string): Promise<DailyLog | null> {
   const database = await openDatabase();
-  const result = await database.getFirstAsync<DailyLog>(
+  const result = (await database.getFirstAsync(
     'SELECT * FROM daily_logs WHERE log_date = ?',
     [date]
-  );
+  )) as any;
   if (result) {
     return {
       ...result,
@@ -273,11 +273,11 @@ export async function getDailyLogs(
   toDate: string
 ): Promise<DailyLog[]> {
   const database = await openDatabase();
-  const results = await database.getAllAsync<DailyLog>(
+  const results = (await database.getAllAsync(
     'SELECT * FROM daily_logs WHERE log_date BETWEEN ? AND ? ORDER BY log_date ASC',
     [fromDate, toDate]
-  );
-  return results.map((r) => ({
+  )) as any[];
+  return results.map((r: any) => ({
     ...r,
     pregnancy_symptoms: r.pregnancy_symptoms
       ? JSON.parse(r.pregnancy_symptoms as unknown as string)
@@ -285,7 +285,7 @@ export async function getDailyLogs(
     symptoms_json: r.symptoms_json
       ? JSON.parse(r.symptoms_json as unknown as string)
       : null,
-  }));
+  })) as DailyLog[];
 }
 
 // ─────────────────────────────────────────────────────────
@@ -321,19 +321,19 @@ export async function getKickSessions(
   limit: number = 30
 ): Promise<KickCounterLog[]> {
   const database = await openDatabase();
-  return database.getAllAsync<KickCounterLog>(
+  return (await database.getAllAsync(
     'SELECT * FROM kick_counter_logs ORDER BY session_date DESC LIMIT ?',
     [limit]
-  );
+  )) as KickCounterLog[];
 }
 
 export async function getTodayKickSessions(): Promise<KickCounterLog[]> {
   const database = await openDatabase();
   const today = new Date().toISOString().split('T')[0];
-  const logs = await database.getAllAsync<KickCounterLog>(
+  const logs = (await database.getAllAsync(
     'SELECT * FROM kick_counter_logs WHERE session_date LIKE ? ORDER BY id DESC',
     [`${today}%`]
-  );
+  )) as KickCounterLog[];
 
   if (Platform.OS === 'web' && (!logs || logs.length === 0)) {
     return fallbackKickLogs.filter(l => l.session_date.startsWith(today));
@@ -350,22 +350,22 @@ export async function getDirectoryContacts(
 ): Promise<DirectoryContact[]> {
   const database = await openDatabase();
   if (municipality) {
-    return database.getAllAsync<DirectoryContact>(
+    return (await database.getAllAsync(
       'SELECT * FROM directory_contacts WHERE municipality = ? ORDER BY type, institution_name',
       [municipality]
-    );
+    )) as DirectoryContact[];
   }
-  return database.getAllAsync<DirectoryContact>(
+  return (await database.getAllAsync(
     'SELECT * FROM directory_contacts ORDER BY municipality, type, institution_name'
-  );
+  )) as DirectoryContact[];
 }
 
 export async function getMunicipalities(): Promise<string[]> {
   const database = await openDatabase();
-  const results = await database.getAllAsync<{ municipality: string }>(
+  const results = (await database.getAllAsync(
     'SELECT DISTINCT municipality FROM directory_contacts ORDER BY municipality'
-  );
-  return results.map((r) => r.municipality);
+  )) as { municipality: string }[];
+  return results.map((r: any) => r.municipality);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -413,14 +413,14 @@ export async function getForumPosts(
   let posts: ForumPost[] = [];
   
   if (category) {
-    posts = await database.getAllAsync<ForumPost>(
+    posts = (await database.getAllAsync(
       'SELECT * FROM forum_posts WHERE category = ? ORDER BY created_at DESC',
       [category]
-    );
+    )) as ForumPost[];
   } else {
-    posts = await database.getAllAsync<ForumPost>(
+    posts = (await database.getAllAsync(
       'SELECT * FROM forum_posts ORDER BY created_at DESC'
-    );
+    )) as ForumPost[];
   }
 
   // Fallback for Web/Demo
@@ -436,9 +436,9 @@ export async function getForumPosts(
 
 export async function getUnsyncedPosts(): Promise<ForumPost[]> {
   const database = await openDatabase();
-  return database.getAllAsync<ForumPost>(
+  return (await database.getAllAsync(
     'SELECT * FROM forum_posts WHERE is_synced = 0 ORDER BY created_at ASC'
-  );
+  )) as ForumPost[];
 }
 
 export async function markPostAsSynced(localUuid: string): Promise<void> {
@@ -456,14 +456,14 @@ export async function markPostAsSynced(localUuid: string): Promise<void> {
 export async function getOfflineFAQs(category?: string): Promise<OfflineFAQ[]> {
   const database = await openDatabase();
   if (category) {
-    return database.getAllAsync<OfflineFAQ>(
+    return (await database.getAllAsync(
       'SELECT * FROM offline_faqs WHERE category = ? ORDER BY id',
       [category]
-    );
+    )) as OfflineFAQ[];
   }
-  return database.getAllAsync<OfflineFAQ>(
+  return (await database.getAllAsync(
     'SELECT * FROM offline_faqs ORDER BY category, id'
-  );
+  )) as OfflineFAQ[];
 }
 // ─────────────────────────────────────────────────────────
 // BRÚJULA LUNAR (USER CYCLE LOGS)
@@ -515,10 +515,10 @@ export async function addUserCycleLog(
 
 export async function getUserCycleLog(date: string): Promise<UserCycleLog | null> {
   const database = await openDatabase();
-  const result = await database.getFirstAsync<UserCycleLog>(
+  const result = (await database.getFirstAsync(
     'SELECT * FROM user_cycle_logs WHERE date_logged = ?',
     [date]
-  );
+  )) as UserCycleLog | undefined;
   return result ?? null;
 }
 
@@ -527,10 +527,10 @@ export async function getUserCycleLogs(
   toDate: string
 ): Promise<UserCycleLog[]> {
   const database = await openDatabase();
-  return database.getAllAsync<UserCycleLog>(
+  return (await database.getAllAsync(
     'SELECT * FROM user_cycle_logs WHERE date_logged BETWEEN ? AND ? ORDER BY date_logged ASC',
     [fromDate, toDate]
-  );
+  )) as UserCycleLog[];
 }
 
 export const fallbackCycleLogs: UserCycleLog[] = (() => {
@@ -563,9 +563,9 @@ export const fallbackCycleLogs: UserCycleLog[] = (() => {
 
 export async function getAllUserCycleLogs(): Promise<UserCycleLog[]> {
   const database = await openDatabase();
-  const logs = await database.getAllAsync<UserCycleLog>(
+  const logs = (await database.getAllAsync(
     'SELECT * FROM user_cycle_logs ORDER BY date_logged ASC'
-  );
+  )) as UserCycleLog[];
   
   if (Platform.OS === 'web' && (!logs || logs.length === 0)) {
     return fallbackCycleLogs;
@@ -593,9 +593,9 @@ export const fallbackMyths: Myth[] = [
 
 export async function getLocalMyths(): Promise<Myth[]> {
   const database = await openDatabase();
-  const myths = await database.getAllAsync<Myth>(
+  const myths = (await database.getAllAsync(
     'SELECT * FROM myths ORDER BY id ASC'
-  );
+  )) as Myth[];
 
   // Fallback para Web (donde SQLite es un mock) o si la DB falló al inicializar
   if (!myths || myths.length === 0) {

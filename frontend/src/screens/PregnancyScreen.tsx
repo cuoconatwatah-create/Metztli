@@ -40,23 +40,21 @@ export default function PregnancyScreen() {
           <GlassCard variant="default" className="mb-6">
             <View style={styles.setupHeader}>
               <CalendarIcon size={24} color="#8B2635" />
-              <Text style={styles.setupTitle}>Configurar Embarazo</Text>
+              <Text style={styles.setupTitle}>{t('pregnancy.setup_title')}</Text>
             </View>
-            <Text style={styles.setupSubtitle}>{t('pregnancy.enter_lmp')} (YYYY-MM-DD)</Text>
+            <Text style={styles.setupSubtitle}>{t('pregnancy.enter_lmp')}</Text>
             
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="2024-01-15"
-                placeholderTextColor="#999"
-                value={lmpInput}
-                onChangeText={setLmpInput}
-                keyboardType="numeric"
-              />
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveLMP}>
-                <Text style={styles.saveButtonText}>{t('common.calculate')}</Text>
-              </TouchableOpacity>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="2024-01-15"
+              placeholderTextColor="#999"
+              value={lmpInput}
+              onChangeText={setLmpInput}
+              keyboardType="numeric"
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveLMP}>
+              <Text style={styles.saveButtonText}>{t('pregnancy.calculate')}</Text>
+            </TouchableOpacity>
             {isEditing && (
               <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.cancelBtn}>
                  <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
@@ -64,12 +62,17 @@ export default function PregnancyScreen() {
             )}
           </GlassCard>
         ) : (
-           <View style={styles.dateInfoContainer}>
-              <Text style={styles.dueDateText}>FPP: {calculation.dueDate}</Text>
-              <TouchableOpacity onPress={() => setIsEditing(true)}>
-                 <Text style={styles.editLink}>Editar FUM</Text>
-              </TouchableOpacity>
-           </View>
+           <GlassCard variant="default">
+              <View style={styles.dateInfoContainer}>
+                <View>
+                  <Text style={styles.dueDateLabel}>{t('pregnancy.due_date')}</Text>
+                  <Text style={styles.dueDateText}>{calculation.dueDate}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
+                   <Text style={styles.editLink}>{t('pregnancy.edit_lmp')}</Text>
+                </TouchableOpacity>
+              </View>
+           </GlassCard>
         )}
 
         {calculation && (
@@ -80,7 +83,7 @@ export default function PregnancyScreen() {
           <GlassCard variant="bosque" className="mt-4">
              <View style={styles.setupHeader}>
                  <CheckCircle2 size={24} color="#2C3D30" />
-                 <Text style={styles.setupTitle}>Tips de la Semana</Text>
+                 <Text style={styles.setupTitle}>{t('pregnancy.weekly_tips')}</Text>
              </View>
              <Text style={styles.setupSubtitle}>{t(calculation.weekData.maternal_tips_key)}</Text>
           </GlassCard>
@@ -124,12 +127,8 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 16,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   input: {
-    flex: 1,
+    width: '100%',
     height: 48,
     backgroundColor: '#FFF',
     borderWidth: 1,
@@ -138,16 +137,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#1A1A1A',
+    marginBottom: 12,
   },
   saveButton: {
     backgroundColor: '#8B2635',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    alignItems: 'center',
+    paddingVertical: 14,
     borderRadius: 12,
+    width: '100%',
   },
   saveButtonText: {
     color: '#FFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 16,
   },
   cancelBtn: {
@@ -162,17 +164,27 @@ const styles = StyleSheet.create({
      flexDirection: 'row',
      justifyContent: 'space-between',
      alignItems: 'center',
-     marginBottom: 16,
-     paddingHorizontal: 4,
+  },
+  dueDateLabel: {
+     fontSize: 12,
+     color: '#666',
+     fontWeight: '500',
+     marginBottom: 2,
   },
   dueDateText: {
-     fontSize: 14,
-     fontWeight: '600',
+     fontSize: 18,
+     fontWeight: '700',
      color: '#2C3D30',
+  },
+  editButton: {
+     backgroundColor: 'rgba(139, 38, 53, 0.08)',
+     paddingHorizontal: 14,
+     paddingVertical: 8,
+     borderRadius: 8,
   },
   editLink: {
      fontSize: 14,
      color: '#8B2635',
-     fontWeight: '500',
+     fontWeight: '600',
   }
 });

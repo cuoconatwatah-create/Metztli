@@ -56,7 +56,10 @@
     "calculate": "Kulkaia",
     "kick_counter": "Tuktan munan kauntka",
     "danger_signs": "Saura tanka nani",
-    "prenatal_care": "Daktar kaikaia MINSA"
+    "prenatal_care": "Daktar kaikaia MINSA",
+    "setup_title": "Pyua tara ridi munaia",
+    "edit_lmp": "Pyua las wala mangkaia",
+    "weekly_tips": "Wik nani tips"
   },
   "kicks": {
     "title": "Tuktan Munan Kauntka",

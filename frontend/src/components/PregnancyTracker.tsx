@@ -109,7 +109,7 @@ export default function PregnancyTracker({
           <View style={styles.divider} />
           <View style={styles.sectionHeader}>
             <Calendar size={24} color="#2C3D30" strokeWidth={1.75} />
-            <Text style={styles.sectionTitle}>Tips</Text>
+            <Text style={styles.sectionTitle}>{t('pregnancy.weekly_tips')}</Text>
           </View>
           <Text style={styles.bodyText}>
             {t(weekData.maternal_tips_key)}

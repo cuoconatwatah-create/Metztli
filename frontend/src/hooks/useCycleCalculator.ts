@@ -50,7 +50,27 @@ export function useCycleCalculator() {
       const cycles = await getCycles(6);
 
       if (!lastCycle) {
-        setCalculation(null);
+        // DEMO FALLBACK: Si no hay ciclos registrados (ej. Web/Demo),
+        // simular que estamos en día 14 de un ciclo de 28 días.
+        const today = new Date().toISOString().split('T')[0];
+        const fakeStartDate = addDays(today, -13); // Empezó hace 13 días → Día 14
+        const avgCycleLength = 28;
+        const avgPeriodLength = 5;
+        const currentDay = 14;
+        const currentPhase = calculatePhase(currentDay, avgPeriodLength, avgCycleLength);
+        const ovulationDay = avgCycleLength - 14;
+        const ovulationDate = addDays(fakeStartDate, ovulationDay - 1);
+
+        setCalculation({
+          currentDay,
+          currentPhase,
+          nextPeriodDate: addDays(fakeStartDate, avgCycleLength),
+          ovulationDate,
+          fertileWindowStart: addDays(ovulationDate, -5),
+          fertileWindowEnd: addDays(ovulationDate, 1),
+          cycleLength: avgCycleLength,
+          periodLength: avgPeriodLength,
+        });
         return;
       }
 

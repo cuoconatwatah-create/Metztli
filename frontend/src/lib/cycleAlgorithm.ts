@@ -10,6 +10,8 @@ export interface CyclePrediction {
   nextPeriodEnd: Date;
   fertileWindowStart: Date;
   fertileWindowEnd: Date;
+  futurePeriods: { start: Date; end: Date }[];
+  futureFertileWindows: { start: Date; end: Date }[];
 }
 
 /**
@@ -109,22 +111,42 @@ export function calculateCyclePredictions(logs: UserCycleLog[]): CyclePrediction
 
   const lastPeriod = periods[periods.length - 1];
 
-  // Proyecciones
   const nextPeriodStart = addDays(lastPeriod.start, averageCycleLength);
   const nextPeriodEnd = addDays(nextPeriodStart, averagePeriodLength - 1);
 
-  // La ventana fértil suele estimarse 14 días antes del próximo periodo (fase lútea típica)
   const estimatedOvulation = addDays(nextPeriodStart, -14);
-  const fertileWindowStart = addDays(estimatedOvulation, -4);
+  const fertileWindowStart = addDays(estimatedOvulation, -5);
   const fertileWindowEnd = addDays(estimatedOvulation, 1);
+
+  // Proyectar 6 ciclos hacia el futuro
+  const futurePeriods: { start: Date; end: Date }[] = [];
+  const futureFertileWindows: { start: Date; end: Date }[] = [];
+  
+  let currentProjStart = nextPeriodStart;
+  for (let i = 0; i < 6; i++) {
+    const currentProjEnd = addDays(currentProjStart, averagePeriodLength - 1);
+    futurePeriods.push({ start: currentProjStart, end: currentProjEnd });
+    
+    // Para ser exactos, calculamos la ovulación basada en el periodo ACTUAL de esta iteración.
+    // La ovulación de un ciclo ocurre 14 días ANTES del final de ese ciclo (inicio del siguiente).
+    const ovul = addDays(addDays(currentProjStart, averageCycleLength), -14);
+    futureFertileWindows.push({
+      start: addDays(ovul, -5),
+      end: addDays(ovul, 1)
+    });
+
+    currentProjStart = addDays(currentProjStart, averageCycleLength);
+  }
 
   return {
     averageCycleLength,
     averagePeriodLength,
     nextPeriodStart,
     nextPeriodEnd,
-    fertileWindowStart,
-    fertileWindowEnd,
+    fertileWindowStart: futureFertileWindows[0].start,
+    fertileWindowEnd: futureFertileWindows[0].end,
+    futurePeriods,
+    futureFertileWindows,
   };
 }
 
@@ -145,11 +167,20 @@ export function getDayState(
   }
 
   const dateTime = date.getTime();
-  const isMenstrual = dateTime >= prediction.nextPeriodStart.getTime() && dateTime <= prediction.nextPeriodEnd.getTime();
-  const isFertile = dateTime >= prediction.fertileWindowStart.getTime() && dateTime <= prediction.fertileWindowEnd.getTime();
 
-  if (isMenstrual) return 'menstrual';
-  if (isFertile) return 'fertile';
+  // Buscar en todos los periodos futuros proyectados
+  for (const period of prediction.futurePeriods) {
+    if (dateTime >= period.start.getTime() && dateTime <= period.end.getTime()) {
+      return 'menstrual';
+    }
+  }
+
+  // Buscar en todas las ventanas fértiles futuras proyectadas
+  for (const window of prediction.futureFertileWindows) {
+    if (dateTime >= window.start.getTime() && dateTime <= window.end.getTime()) {
+      return 'fertile';
+    }
+  }
 
   return 'base';
 }

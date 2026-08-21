@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "En esta carpeta se encuentra el servidor, la lógica de negocio y las conexiones a bases de datos.",
   "main": "index.js",
   "devDependencies": {

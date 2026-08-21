@@ -56,7 +56,10 @@
     "calculate": "Calculate",
     "kick_counter": "Kick Counter",
     "danger_signs": "Danger Signs",
-    "prenatal_care": "Prenatal Care MINSA"
+    "prenatal_care": "Prenatal Care MINSA",
+    "setup_title": "Set Up Pregnancy",
+    "edit_lmp": "Edit Last Period",
+    "weekly_tips": "Weekly Tips"
   },
   "kicks": {
     "title": "Kick Counter",

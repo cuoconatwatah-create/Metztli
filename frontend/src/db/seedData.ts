@@ -12,11 +12,12 @@ import type { PregnancyWeekData } from '@/types';
 export async function seedDatabase(): Promise<void> {
   const db = await openDatabase();
 
-  // Check if already seeded
-  const contactCount = await db.getFirstAsync<{ count: number }>(
+  // Check if table has rows
+  const result = (await db.getFirstAsync(
     'SELECT COUNT(*) as count FROM directory_contacts'
-  );
-  if (contactCount && contactCount.count > 0) return;
+  )) as { count: number };
+
+  if (result.count > 0) return;
 
   // ── Emergency Directory ──────────────────────────────
   await db.execAsync(`

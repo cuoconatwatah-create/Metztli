@@ -1,6 +1,6 @@
 {
   "name": "metztli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Metztli — Salud femenina integral offline-first para la Costa Caribe de Nicaragua",
   "main": "expo/AppEntry.js",
   "scripts": {
