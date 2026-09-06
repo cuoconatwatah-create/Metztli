@@ -1,4 +1,4 @@
-﻿# Interfaz y Desarrollo — Metztli
+# Interfaz y Desarrollo — Metztli
 
 > **Entregable de Desarrollo**: Interfaz y desarrollo  
 > **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First  
