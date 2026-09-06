@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Home Screen (Dynamic Dashboard & Menstruation Module)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Home Screen (Dynamic Dashboard & Menstruation Module)
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';

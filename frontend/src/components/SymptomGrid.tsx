@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Symptom Grid Component (Sin Emojis)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Symptom Grid Component (Sin Emojis)
 // ─────────────────────────────────────────────────────────
 
 import React from 'react';

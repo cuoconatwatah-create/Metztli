@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Cycle Wheel Component (Visualizador de Ciclo)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Cycle Wheel Component (Visualizador de Ciclo)
 // ─────────────────────────────────────────────────────────
 
 import React from 'react';

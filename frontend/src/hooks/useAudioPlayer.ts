@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Audio Player Hook (expo-av)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Audio Player Hook (expo-av)
 // ─────────────────────────────────────────────────────────
 
 import { useState, useCallback, useRef, useEffect } from 'react';

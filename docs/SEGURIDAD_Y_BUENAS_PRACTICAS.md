@@ -1,7 +1,7 @@
-# Seguridad y Buenas Prácticas — Metztli 2.0
+﻿# Seguridad y Buenas Prácticas — Metztli
 
 > **Entregable de Desarrollo**: Seguridad y Buenas Prácticas  
-> **Proyecto**: Metztli 2.0 — Plataforma de Salud Femenina Integral Offline-First para la Costa Caribe de Nicaragua  
+> **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First para la Costa Caribe de Nicaragua  
 > **Fecha de Actualización**: Septiembre 2026  
 > **Estado**: Implementado y Verificado  
 
@@ -9,13 +9,13 @@
 
 ## 1. Visión General y Filosofía de Privacidad
 
-Metztli 2.0 gestiona información altamente sensible sobre la salud sexual, reproductiva y los ciclos biológicos de mujeres y personas menstruantes, muchas de ellas residentes en comunidades rurales de la Costa Caribe de Nicaragua (Bluefields, Bilwi/Puerto Cabezas, Waspam, etc.).
+Metztli gestiona información altamente sensible sobre la salud sexual, reproductiva y los ciclos biológicos de mujeres y personas menstruantes, muchas de ellas residentes en comunidades rurales de la Costa Caribe de Nicaragua (Bluefields, Bilwi/Puerto Cabezas, Waspam, etc.).
 
-La seguridad en Metztli 2.0 no es un añadido secundario, sino el núcleo de su arquitectura bajo el principio de **Privacidad desde el Diseño y por Defecto (Privacy by Design and by Default)**.
+La seguridad en Metztli no es un añadido secundario, sino el núcleo de su arquitectura bajo el principio de **Privacidad desde el Diseño y por Defecto (Privacy by Design and by Default)**.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│               ARQUITECTURA DE PRIVACIDAD EN METZTLI 2.0                 │
+│               ARQUITECTURA DE PRIVACIDAD EN Metztli                 │
 └────────────────────────────────────────────────────────────────────────┘
   Dispositivo de la Usuaria (100% Local y Privado)
   ┌────────────────────────────────────────────────────────────────────┐
@@ -60,7 +60,7 @@ Cuando se interactúa con el backend Supabase (por ejemplo, en el foro de dudas 
 
 ## 3. Almacenamiento Criptográfico Seguro (`expo-secure-store`)
 
-A diferencia del uso inseguro de `localStorage` o `AsyncStorage` en texto plano (vulnerable en dispositivos con root o jailbreak), Metztli 2.0 utiliza **`expo-secure-store`** para toda información de credenciales y configuración sensible:
+A diferencia del uso inseguro de `localStorage` o `AsyncStorage` en texto plano (vulnerable en dispositivos con root o jailbreak), Metztli utiliza **`expo-secure-store`** para toda información de credenciales y configuración sensible:
 
 - **Android**: Los datos se cifran utilizando **Android Keystore**, garantizando que las llaves criptográficas residan en el elemento seguro del hardware (TEE - Trusted Execution Environment).
 - **iOS**: Los datos se almacenan en el **Keychain** del sistema operativo con atributos de accesibilidad restringida.
@@ -115,7 +115,7 @@ Todas las tablas en PostgreSQL tienen habilitado de forma estricta **Row Level S
 En la base de datos local embebida (`frontend/src/db/database.ts`), se erradica por completo la concatenación de cadenas de texto no sanitizadas. Todas las operaciones utilizan **consultas parametrizadas**:
 
 ```typescript
-// ✅ BUENA PRÁCTICA (Implementada en Metztli 2.0):
+// ✅ BUENA PRÁCTICA (Implementada en Metztli):
 await database.runAsync(
   'UPDATE user_profile SET current_mode = ? WHERE id = 1',
   [mode]
@@ -149,7 +149,7 @@ await database.runAsync(
 
 ## 8. Resiliencia, Conectividad y Manejo Defensivo de Errores
 
-Las redes móviles en la Costa Caribe presentan alta latencia y frecuentes caídas de señal. Metztli 2.0 incorpora patrones defensivos:
+Las redes móviles en la Costa Caribe presentan alta latencia y frecuentes caídas de señal. Metztli incorpora patrones defensivos:
 
 1. **Detección Activa de Conectividad con NetInfo**:
    Antes de disparar cualquier petición de red hacia Supabase, `sync.ts` verifica el estado real de la conexión:

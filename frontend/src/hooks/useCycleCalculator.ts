@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Cycle Calculator Hook (Offline)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Cycle Calculator Hook (Offline)
 // ─────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from 'react';

@@ -1,7 +1,7 @@
-# Guía de Ejecución de la Solución — Metztli 2.0
+﻿# Guía de Ejecución de la Solución — Metztli
 
 > **Entregable de Desarrollo**: Ejecución de la Solución  
-> **Proyecto**: Metztli 2.0 — Plataforma de Salud Femenina Integral Offline-First  
+> **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First  
 > **Fecha**: Septiembre 2026  
 > **Estado**: Verificado y Listo para Evaluación  
 
@@ -9,7 +9,7 @@
 
 ## 1. Visión General de la Solución
 
-Metztli 2.0 es una aplicación móvil desarrollada con **React Native (Expo SDK 51)**, **TypeScript**, **NativeWind (Tailwind CSS)** y una arquitectura **Offline-First** basada en **SQLite** local sincronizable con **Supabase** (PostgreSQL).
+Metztli es una aplicación móvil desarrollada con **React Native (Expo SDK 51)**, **TypeScript**, **NativeWind (Tailwind CSS)** y una arquitectura **Offline-First** basada en **SQLite** local sincronizable con **Supabase** (PostgreSQL).
 
 Para facilitar la revisión por parte de evaluadores y desarrolladores, la solución soporta **5 modalidades de ejecución**, desde una visualización instantánea en navegador web hasta la generación de un binario instalable (`.apk`) para dispositivos Android físicos.
 
@@ -124,7 +124,7 @@ Para generar un instalable independiente `.apk` directamente en tu máquina:
 ---
 
 ### Modalidad 4: Descarga del APK desde CI/CD (GitHub Actions 🚀)
-Metztli 2.0 cuenta con un pipeline automatizado de integración continua que compila el APK en cada actualización de `main`:
+Metztli cuenta con un pipeline automatizado de integración continua que compila el APK en cada actualización de `main`:
 
 1. Ingresa al repositorio en GitHub: [https://github.com/cuoconatwatah-create/Metztli](https://github.com/cuoconatwatah-create/Metztli).
 2. Haz clic en la pestaña **Actions**.
@@ -147,7 +147,7 @@ EAS Build generará un enlace de descarga directa del APK al finalizar la compil
 
 ## 5. Configuración del Backend y Base de Datos (Supabase)
 
-Metztli 2.0 utiliza Supabase para la persistencia comunitaria en la nube (directorio médico, mitos culturales y sincronización del foro).
+Metztli utiliza Supabase para la persistencia comunitaria en la nube (directorio médico, mitos culturales y sincronización del foro).
 
 ### Opción A: Conexión al Supabase Cloud de Producción/Demo
 El archivo `.env` del frontend ya viene configurado para consumir el endpoint activo del proyecto. No se requiere configuración adicional.

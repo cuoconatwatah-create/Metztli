@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — GlassCard Component (Glassmorphism Base)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — GlassCard Component (Glassmorphism Base)
 // ─────────────────────────────────────────────────────────
 
 import React from 'react';

@@ -1,7 +1,7 @@
-# Interfaz y Desarrollo — Metztli 2.0
+﻿# Interfaz y Desarrollo — Metztli
 
 > **Entregable de Desarrollo**: Interfaz y desarrollo  
-> **Proyecto**: Metztli 2.0 — Plataforma de Salud Femenina Integral Offline-First  
+> **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First  
 > **Fecha**: Septiembre 2026  
 > **Estado**: Diseñado, Implementado y Documentado  
 
@@ -9,7 +9,7 @@
 
 ## 1. Filosofía de Diseño UI/UX Intercultural
 
-Metztli 2.0 está diseñado para responder a la realidad sociocultural de la **Costa Caribe de Nicaragua**, donde convergen pueblos indígenas y afrodescendientes (Miskitus, Criollos, Mayangnas y Mestizos). El diseño se fundamenta en:
+Metztli está diseñado para responder a la realidad sociocultural de la **Costa Caribe de Nicaragua**, donde convergen pueblos indígenas y afrodescendientes (Miskitus, Criollos, Mayangnas y Mestizos). El diseño se fundamenta en:
 
 1. **Simplicidad y Accesibilidad Cognitiva**:
    - Elementos visuales claros, iconografía médica intuitiva y mínima sobrecarga de texto.

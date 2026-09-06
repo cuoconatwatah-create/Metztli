@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Language Switcher Component
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Language Switcher Component
 // ─────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';

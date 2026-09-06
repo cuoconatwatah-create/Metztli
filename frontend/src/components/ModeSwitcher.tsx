@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Mode Switcher (Life Stage Selector)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Mode Switcher (Life Stage Selector)
 // ─────────────────────────────────────────────────────────
 
 import React from 'react';

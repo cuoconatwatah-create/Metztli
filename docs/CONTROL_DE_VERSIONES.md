@@ -1,7 +1,7 @@
-﻿# Control de Versiones y CI/CD — Metztli 2.0
+﻿# Control de Versiones y CI/CD — Metztli
 
 > **Entregable de Desarrollo**: Control de versiones  
-> **Proyecto**: Metztli 2.0 — Plataforma de Salud Femenina Integral Offline-First  
+> **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First  
 > **Fecha**: Septiembre 2026  
 > **Estado**: Configurado, Automatizado y Documentado  
 
@@ -9,7 +9,7 @@
 
 ## 1. Estrategia de Ramas y Flujo de Trabajo (Git Workflow)
 
-El repositorio de Metztli 2.0 adopta una estrategia basada en **GitHub Flow** optimizada para despliegues continuos y trazabilidad en equipos ágiles:
+El repositorio de Metztli adopta una estrategia basada en **GitHub Flow** optimizada para despliegues continuos y trazabilidad en equipos ágiles:
 
 ```
                   ┌──────────────┐

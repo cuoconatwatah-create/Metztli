@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Alarm Card Component (Obstetric Danger Signs)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Alarm Card Component (Obstetric Danger Signs)
 // ─────────────────────────────────────────────────────────
 
 import React from 'react';

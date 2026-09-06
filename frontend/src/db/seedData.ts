@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Seed Data (Pre-populated Offline Content)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Seed Data (Pre-populated Offline Content)
 // ─────────────────────────────────────────────────────────
 
 import { openDatabase } from './database';

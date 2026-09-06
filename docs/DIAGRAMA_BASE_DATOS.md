@@ -1,7 +1,7 @@
-﻿# Diagrama de Base de Datos y Modelo de Datos — Metztli 2.0
+﻿# Diagrama de Base de Datos y Modelo de Datos — Metztli
 
 > **Entregable de Desarrollo**: Diagrama de base de datos  
-> **Proyecto**: Metztli 2.0 — Plataforma de Salud Femenina Integral Offline-First  
+> **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First  
 > **Fecha**: Septiembre 2026  
 > **Estado**: Modelado, Implementado y Documentado  
 
@@ -9,7 +9,7 @@
 
 ## 1. Arquitectura de Datos Híbrida (Offline-First)
 
-Metztli 2.0 implementa una arquitectura de persistencia dual:
+Metztli implementa una arquitectura de persistencia dual:
 1. **Base de Datos Local Embebida (SQLite — `metztli.db`)**:
    - Reside en el almacenamiento privado del dispositivo mediante `expo-sqlite`.
    - Garantiza velocidad instantánea, cero latencia y disponibilidad 100% desconectada (*offline*).

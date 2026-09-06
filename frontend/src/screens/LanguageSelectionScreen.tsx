@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Language Selection Screen (Onboarding)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Language Selection Screen (Onboarding)
 // ─────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';

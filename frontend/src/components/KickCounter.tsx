@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Kick Counter Component
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Kick Counter Component
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useCallback } from 'react';

@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — SQLite Database Initializer (Offline-First)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — SQLite Database Initializer (Offline-First)
 // ─────────────────────────────────────────────────────────
 
 import * as SQLite from 'expo-sqlite';

@@ -1,6 +1,6 @@
-﻿# Documentación Técnica y Entregables de Desarrollo — Metztli 2.0
+﻿# Documentación Técnica y Entregables de Desarrollo — Metztli
 
-Bienvenido al centro de documentación formal del proyecto **Metztli 2.0**. En este directorio se encuentran los 6 documentos que sustentan y detallan los entregables técnicos de la solución:
+Bienvenido al centro de documentación formal del proyecto **Metztli**. En este directorio se encuentran los 6 documentos que sustentan y detallan los entregables técnicos de la solución:
 
 ---
 

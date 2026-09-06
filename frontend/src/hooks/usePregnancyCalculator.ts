@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Pregnancy Calculator Hook (Offline)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Pregnancy Calculator Hook (Offline)
 // Uses Naegele's Rule: EDD = LMP + 280 days
 // ─────────────────────────────────────────────────────────
 

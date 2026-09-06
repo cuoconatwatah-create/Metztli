@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Sync Queue Hook (Offline-First Forum)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Sync Queue Hook (Offline-First Forum)
 // ─────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback, useRef } from 'react';

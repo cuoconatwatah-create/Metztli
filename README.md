@@ -1,4 +1,4 @@
-# Metztli 2.0 — Salud Femenina Integral Intercultural (Offline-First)
+﻿# Metztli — Salud Femenina Integral Intercultural (Offline-First)
 
 <div align="center">
 
@@ -14,9 +14,9 @@
 
 ---
 
-## 🌙 Acerca de Metztli 2.0
+## 🌙 Acerca de Metztli
 
-**Metztli 2.0** es una solución tecnológica de salud sexual, reproductiva y comunitaria diseñada especialmente para mujeres y personas gestantes en la **Costa Caribe de Nicaragua** (Regiones Autónomas RACCN y RACCS: Bluefields, Bilwi/Puerto Cabezas, Waspam, Corn Island y comunidades rurales circundantes).
+**Metztli** es una solución tecnológica de salud sexual, reproductiva y comunitaria diseñada especialmente para mujeres y personas gestantes en la **Costa Caribe de Nicaragua** (Regiones Autónomas RACCN y RACCS: Bluefields, Bilwi/Puerto Cabezas, Waspam, Corn Island y comunidades rurales circundantes).
 
 El proyecto aborda los desafíos críticos de conectividad limitada, barreras lingüísticas y desinformación médica a través de tres pilares fundamentales:
 1. **Arquitectura 100% Offline-First**: Operatividad completa sin conexión a Internet mediante base de datos embebida SQLite local y cola de sincronización resiliente cuando se restablece la red.
@@ -29,7 +29,7 @@ El proyecto aborda los desafíos críticos de conectividad limitada, barreras li
 
 ```
                                ┌─────────────────────────────┐
-                               │         METZTLI 2.0         │
+                               │         Metztli         │
                                └──────────────┬──────────────┘
             ┌──────────────────┬──────────────┼──────────────────┬──────────────────┐
             ▼                  ▼              ▼                  ▼                  ▼

@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Forum Screen (Offline-First Community)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Forum Screen (Offline-First Community)
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';

@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Módulo de Embarazo (NBU & Offline-First)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Módulo de Embarazo (NBU & Offline-First)
 // Panel de Seguimiento Gestacional + Triage de Emergencias
 // ─────────────────────────────────────────────────────────
 

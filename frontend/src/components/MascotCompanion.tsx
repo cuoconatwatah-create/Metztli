@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Mascot Companion Component (Sula)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Mascot Companion Component (Sula)
 // ─────────────────────────────────────────────────────────
 
 import React, { useMemo } from 'react';

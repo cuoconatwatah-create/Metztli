@@ -1,5 +1,5 @@
-// ─────────────────────────────────────────────────────────
-// Metztli 2.0 — Directory Screen (Emergency Contacts)
+﻿// ─────────────────────────────────────────────────────────
+// Metztli — Directory Screen (Emergency Contacts)
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
