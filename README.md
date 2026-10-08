@@ -24,6 +24,22 @@
 
 ---
 
+## 👩🏾 ¿A quién va dirigida la app?
+
+| Público | Cómo la usa |
+| :--- | :--- |
+| **Mujeres y personas gestantes** de la Costa Caribe de Nicaragua (RACCN y RACCS), en zonas urbanas y rurales | Registran su ciclo, embarazo o menopausia, aprenden y consultan sin necesitar internet |
+| **Comunidades miskitu y creole**, y personas con poca alfabetización | Usan la app en su idioma y con audio (lectura por voz y audios comunitarios en Miskitu) |
+| **Parejas y familiares** (modo acompañante) | Reciben consejos para apoyar a la persona, con su permiso y un código de vinculación |
+| **Promotoras de salud y parteras** | La usan como apoyo educativo y para orientar sobre señales de alarma y auxilio por SMS |
+| **Personal de la plataforma** (Administradora y Auditora) | Moderan contenido y supervisan, **sin acceso a datos de salud** de nadie |
+
+**Contexto**: zonas con conectividad limitada, barreras de idioma y desinformación médica, donde el acceso a centros de salud suele ser lejano.
+
+> Metztli es una herramienta educativa y de acompañamiento. **No sustituye la atención médica**: ante señales de alarma, la app indica acudir al centro de salud.
+
+---
+
 ## 🎯 ¿A quién va dirigido este README?
 
 Este documento técnico tiene tres públicos. Cada uno puede ir directo a su parte:
