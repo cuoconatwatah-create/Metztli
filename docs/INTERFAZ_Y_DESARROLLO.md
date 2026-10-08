@@ -81,7 +81,7 @@ El selector de etapa (botón bajo el título de cada inicio, y en Perfil) cambia
 
 **Entrada y cuenta**
 1. **`LanguageSelectionScreen`** y **`WelcomeScreen`**: idioma, logo vectorial, *Comenzar* / *Acompañante* / *Iniciar sesión*.
-2. **`AuthScreen`**: formulario de perfil (nombre, correo o teléfono, contraseña mínima de 8) con validación; modo inicio de sesión; aviso para confirmar el correo.
+2. **`AuthScreen`**: formulario de perfil (nombre, correo electrónico, contraseña mínima de 8) con validación; modo inicio de sesión; aviso para confirmar el correo.
 3. **`StageSelectionScreen`**: elegir etapa.
 4. **`TribuCodeScreen`**: código de acompañante y compartir.
 

@@ -39,7 +39,7 @@ gitGraph
 | `git push -u origin feat/figma-ui-supabase` | **Push**: subir la rama a GitHub |
 | `git pull origin main` | **Pull**: traer los cambios de `main` antes de fusionar y después del merge |
 | `git log --oneline` | Revisar el historial |
-| `git tag v2.0.1 && git push origin v2.0.1` | Crear una versión y publicar su Release con el APK |
+| `git tag v2.0.2 && git push origin v2.0.2` | Crear una versión y publicar su Release con el APK |
 
 ---
 
@@ -98,7 +98,7 @@ flowchart LR
 
 ## 4. Versionado semántico (SemVer)
 
-`MAJOR.MINOR.PATCH` — versión actual **2.0.1**, sincronizada en `frontend/package.json` y `frontend/app.json`.
+`MAJOR.MINOR.PATCH` — versión actual **2.0.2**, sincronizada en `frontend/package.json` y `frontend/app.json`.
 
 - **MAJOR (2)**: arquitectura offline-first trilingüe.
 - **MINOR (0)**: módulos de etapas, Desmitificador, Tribu y acompañante.
