@@ -43,13 +43,35 @@ erDiagram
     DAILY_LOGS {
         int id PK "Autoincrement"
         string log_date UK "Fecha del registro (YYYY-MM-DD)"
-        string mode "Etapa activa"
-        string flow_level "light | medium | heavy"
+        string mode "cycle | pregnancy | menopause"
+        string flow_level "none | spotting | medium | heavy"
+        string flow_color "rosado | rojo_brillante | rojo_oscuro | cafe"
+        string flow_intensity "leve | moderado | abundante | muy_abundante"
+        string mucus "seca | cremosa | acuosa | elastica"
         int pain_level "Escala 0-5"
-        string pregnancy_symptoms "JSON array de sintomas"
-        string mood "Estado animico"
-        string symptoms_json "JSON detallado"
+        string mood "feliz | bien | triste | irritada | cansada"
+        int vitality "1-5"
+        int discomfort "1-5"
+        string weather "lluvia | nublado | sol"
+        real sleep_hours "0-24"
+        int movement_min ">= 0"
+        int water_glasses ">= 0"
         string notes "Notas privadas de la usuaria"
+    }
+
+    SYMPTOMS {
+        string code PK "cramps, nausea, hotFlashes..."
+        string label_key "Clave de traduccion"
+    }
+
+    DAILY_LOG_SYMPTOMS {
+        int daily_log_id PK,FK "Parte de la clave compuesta"
+        string symptom_code PK,FK "Parte de la clave compuesta"
+    }
+
+    DAILY_LOG_HABITS {
+        int daily_log_id PK,FK "Parte de la clave compuesta"
+        string habit_code PK "water, walk, breathe"
     }
 
     KICK_COUNTER_LOGS {
@@ -108,6 +130,9 @@ erDiagram
 
     %% RELACIONES CONCEPTUALES
     USER_PROFILE ||--o{ DAILY_LOGS : "registra_en_etapa"
+    DAILY_LOGS ||--o{ DAILY_LOG_SYMPTOMS : "incluye"
+    SYMPTOMS ||--o{ DAILY_LOG_SYMPTOMS : "se_registra_en"
+    DAILY_LOGS ||--o{ DAILY_LOG_HABITS : "cumple"
     USER_PROFILE ||--o{ KICK_COUNTER_LOGS : "monitorea_en_embarazo"
     USER_PROFILE ||--o{ CYCLES : "calcula_con"
     FORUM_POSTS ||--o{ DIRECTORY_CONTACTS : "apoyo_comunitario"
@@ -142,20 +167,45 @@ Almacena los intervalos entre menstruaciones para alimentar el algoritmo de pred
 
 ---
 
-### 3.3 `daily_logs` (Registro Diario de Síntomas)
-Permite a la usuaria registrar síntomas físicos, emocionales y notas clínicas día con día.
+### 3.3 `daily_logs` (Registro Diario) y tablas hijas
+Un renglón por fecha con los datos atómicos del día. Los datos multivaluados (síntomas y hábitos) viven en tablas hijas, no en columnas JSON.
 
 | Campo | Tipo SQLite | Restricciones | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | ID autoincremental. |
-| `log_date` | `TEXT` | `UNIQUE NOT NULL` | Fecha del log (garantiza un único log por día). |
-| `mode` | `TEXT` | `NOT NULL` | Modo activo en el que se tomó el registro. |
-| `flow_level` | `TEXT` | Nullable | Nivel de flujo: `'spotting'`, `'light'`, `'medium'`, `'heavy'`. |
-| `pain_level` | `INTEGER` | Nullable | Escala de dolor de cólicos de 0 a 5. |
-| `pregnancy_symptoms`| `TEXT` | Nullable | Lista serializada JSON de síntomas gestacionales. |
-| `mood` | `TEXT` | Nullable | Estado de ánimo registrado (ej. `'calm'`, `'happy'`, `'tired'`). |
-| `symptoms_json`| `TEXT` | Nullable | Carga útil serializada con detalles complementarios. |
-| `notes` | `TEXT` | Nullable | Texto libre privado de la usuaria. |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | ID autoincremental (no cambia al actualizar el día). |
+| `log_date` | `TEXT` | `UNIQUE NOT NULL` | Fecha local del registro (un único registro por día). |
+| `mode` | `TEXT` | `CHECK IN ('cycle','pregnancy','menopause')` | Etapa activa al registrar. |
+| `flow_level` | `TEXT` | `CHECK IN ('none','spotting','medium','heavy')` | Nivel de flujo (modelo clínico). |
+| `flow_color`, `flow_intensity`, `mucus` | `TEXT` | Nullable | Color, intensidad y mucosidad cervical de "Mi Ciclo". |
+| `pain_level` | `INTEGER` | `CHECK BETWEEN 0 AND 5` | Dolor de cólicos. |
+| `mood` | `TEXT` | Nullable | Ánimo del día. |
+| `vitality`, `discomfort` | `INTEGER` | `CHECK BETWEEN 1 AND 5` | Escalas de "¿Cómo habitas tu día?". |
+| `weather` | `TEXT` | Nullable | Clima emocional. |
+| `sleep_hours` | `REAL` | `CHECK BETWEEN 0 AND 24` | Horas de sueño. |
+| `movement_min` | `INTEGER` | `CHECK >= 0` | Minutos de movimiento. |
+| `water_glasses` | `INTEGER` | `CHECK >= 0` | Vasos de agua. |
+| `notes` | `TEXT` | Nullable | Texto libre privado. |
+
+**`symptoms`** — catálogo: `code TEXT PRIMARY KEY`, `label_key TEXT NOT NULL`.
+
+**`daily_log_symptoms`** — `PRIMARY KEY (daily_log_id, symptom_code)`; `daily_log_id` → `daily_logs(id) ON DELETE CASCADE`, `symptom_code` → `symptoms(code)`.
+
+**`daily_log_habits`** — `PRIMARY KEY (daily_log_id, habit_code)`; `daily_log_id` → `daily_logs(id) ON DELETE CASCADE`.
+
+#### Normalización aplicada (hasta 2FN)
+
+| Antes (v1) | Problema | Ahora (v2) |
+| :--- | :--- | :--- |
+| `pregnancy_symptoms` (JSON) y `symptoms_json` (JSON) | Campos multivaluados: incumplen **1FN**, imposibles de consultar o validar | Filas en `daily_log_symptoms` con FK al catálogo `symptoms` |
+| Hábitos serializados dentro de `notes` | Mezcla texto libre con datos estructurados | Filas en `daily_log_habits` |
+| Sueño, agua, color del flujo… como etiquetas `clave:valor` dentro del JSON | Atributos sin tipo ni restricciones | Columnas tipadas con `CHECK` en `daily_logs` |
+| `INSERT OR REPLACE` | Borraba y recreaba el renglón (cambiaba el `id`) | `INSERT … ON CONFLICT(log_date) DO UPDATE` (el `id` se conserva) |
+
+**2FN:** todas las tablas tienen clave primaria. En las que la clave es simple (`daily_logs`, `cycles`, `symptoms`, …) no pueden existir dependencias parciales. Las dos tablas con clave compuesta (`daily_log_symptoms`, `daily_log_habits`) no guardan atributos adicionales, por lo que ningún atributo depende de solo una parte de la clave.
+
+**Migración automática v1 → v2** (`frontend/src/db/schema.ts`, se ejecuta al abrir la app y es idempotente): renombra la tabla antigua, crea el esquema nuevo, reparte los JSON en columnas y filas hijas, descarta valores fuera de rango y elimina la tabla antigua. `PRAGMA user_version = 2`.
+
+**Supabase:** `backend/supabase/migrations/20240101000002_daily_logs_normalized.sql` crea el mismo modelo (con `user_id`, `UNIQUE (user_id, log_date)` y RLS por dueña). Aún no está conectado; la clave natural `(user_id, log_date)` permitirá sincronizar sin `local_uuid`.
 
 ---
 

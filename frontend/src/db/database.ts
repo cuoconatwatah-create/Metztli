@@ -5,6 +5,15 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import {
+  DAILY_LOG_SQL,
+  SCHEMA_VERSION,
+  SYMPTOM_SEED_SQL,
+  migrateLegacyDailyLogs,
+  readDailyLogs,
+  renameLegacyDailyLogs,
+  upsertDailyLog,
+} from './schema';
 
 import type {
   UserProfile,
@@ -39,6 +48,7 @@ export async function openDatabase(): Promise<any> {
   }
   if (db) return db;
   db = await SQLite.openDatabaseAsync('metztli.db');
+  await db.execAsync('PRAGMA foreign_keys = ON;');
   return db;
 }
 
@@ -47,6 +57,9 @@ export async function openDatabase(): Promise<any> {
  */
 export async function initializeDatabase(): Promise<void> {
   const database = await openDatabase();
+
+  // v1 → v2: aparta la tabla daily_logs antigua (JSON en columnas) antes de crear el esquema normalizado
+  await renameLegacyDailyLogs(database);
 
   await database.execAsync(`
     -- Perfil y modo de etapa de vida activa
@@ -67,19 +80,6 @@ export async function initializeDatabase(): Promise<void> {
       end_date TEXT,
       cycle_length INTEGER DEFAULT 28,
       period_length INTEGER DEFAULT 5
-    );
-
-    -- Registro diario de síntomas
-    CREATE TABLE IF NOT EXISTS daily_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      log_date TEXT UNIQUE NOT NULL,
-      mode TEXT NOT NULL,
-      flow_level TEXT,
-      pain_level INTEGER,
-      pregnancy_symptoms TEXT,
-      mood TEXT,
-      symptoms_json TEXT,
-      notes TEXT
     );
 
     -- Registro de pataditas fetales
@@ -153,6 +153,12 @@ export async function initializeDatabase(): Promise<void> {
     ('m2', 'menopausia', 'La menopausia te hace ganar peso de forma inevitable.', 'El metabolismo se vuelve más lento con la edad. El aumento de peso se previene manteniendo una alimentación saludable y ejercicio regular.'),
     ('m3', 'menopausia', 'La menopausia es una enfermedad que requiere tratamiento médico siempre.', 'Es una etapa natural de la vida, no una enfermedad. Solo requiere tratamiento si los síntomas (como los bochornos) afectan severamente tu calidad de vida.');
   `);
+
+  // Registro diario normalizado (2FN) + catálogo de síntomas + migración desde v1
+  await database.execAsync(DAILY_LOG_SQL);
+  await database.execAsync(SYMPTOM_SEED_SQL);
+  await migrateLegacyDailyLogs(database);
+  await database.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -231,61 +237,18 @@ export async function getLastCycle(): Promise<Cycle | null> {
 
 export async function addDailyLog(log: Omit<DailyLog, 'id'>): Promise<void> {
   const database = await openDatabase();
-  await database.runAsync(
-    `INSERT OR REPLACE INTO daily_logs 
-      (log_date, mode, flow_level, pain_level, pregnancy_symptoms, mood, symptoms_json, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      log.log_date,
-      log.mode,
-      log.flow_level ?? null,
-      log.pain_level ?? null,
-      log.pregnancy_symptoms ? JSON.stringify(log.pregnancy_symptoms) : null,
-      log.mood ?? null,
-      log.symptoms_json ? JSON.stringify(log.symptoms_json) : null,
-      log.notes ?? null,
-    ]
-  );
+  await upsertDailyLog(database, log);
 }
 
 export async function getDailyLog(date: string): Promise<DailyLog | null> {
   const database = await openDatabase();
-  const result = (await database.getFirstAsync(
-    'SELECT * FROM daily_logs WHERE log_date = ?',
-    [date]
-  )) as any;
-  if (result) {
-    return {
-      ...result,
-      pregnancy_symptoms: result.pregnancy_symptoms
-        ? JSON.parse(result.pregnancy_symptoms as unknown as string)
-        : null,
-      symptoms_json: result.symptoms_json
-        ? JSON.parse(result.symptoms_json as unknown as string)
-        : null,
-    };
-  }
-  return null;
+  const [log] = await readDailyLogs(database, 'WHERE log_date = ?', [date]);
+  return log ?? null;
 }
 
-export async function getDailyLogs(
-  fromDate: string,
-  toDate: string
-): Promise<DailyLog[]> {
+export async function getDailyLogs(fromDate: string, toDate: string): Promise<DailyLog[]> {
   const database = await openDatabase();
-  const results = (await database.getAllAsync(
-    'SELECT * FROM daily_logs WHERE log_date BETWEEN ? AND ? ORDER BY log_date ASC',
-    [fromDate, toDate]
-  )) as any[];
-  return results.map((r: any) => ({
-    ...r,
-    pregnancy_symptoms: r.pregnancy_symptoms
-      ? JSON.parse(r.pregnancy_symptoms as unknown as string)
-      : null,
-    symptoms_json: r.symptoms_json
-      ? JSON.parse(r.symptoms_json as unknown as string)
-      : null,
-  })) as DailyLog[];
+  return readDailyLogs(database, 'WHERE log_date BETWEEN ? AND ?', [fromDate, toDate]);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -435,6 +398,7 @@ export async function getForumPosts(
 }
 
 export async function getUnsyncedPosts(): Promise<ForumPost[]> {
+  if (Platform.OS === 'web') return fallbackForumPosts.filter((p) => p.is_synced === 0);
   const database = await openDatabase();
   return (await database.getAllAsync(
     'SELECT * FROM forum_posts WHERE is_synced = 0 ORDER BY created_at ASC'
@@ -442,11 +406,39 @@ export async function getUnsyncedPosts(): Promise<ForumPost[]> {
 }
 
 export async function markPostAsSynced(localUuid: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    fallbackForumPosts.forEach((p) => { if (p.local_uuid === localUuid) p.is_synced = 1; });
+    return;
+  }
   const database = await openDatabase();
   await database.runAsync(
     'UPDATE forum_posts SET is_synced = 1 WHERE local_uuid = ?',
     [localUuid]
   );
+}
+
+/** Guarda publicaciones bajadas de Supabase (o marca como sincronizadas las que ya existían). */
+export async function saveRemoteForumPosts(
+  posts: { local_uuid: string; alias: string; category: ForumCategory; question: string; created_at: string }[]
+): Promise<void> {
+  if (Platform.OS === 'web') {
+    for (const p of posts) {
+      const existing = fallbackForumPosts.find((x) => x.local_uuid === p.local_uuid);
+      if (existing) existing.is_synced = 1;
+      else fallbackForumPosts.push({ id: Date.now() + Math.random(), ...p, is_synced: 1 });
+    }
+    fallbackForumPosts.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return;
+  }
+  const database = await openDatabase();
+  for (const p of posts) {
+    await database.runAsync(
+      `INSERT INTO forum_posts (local_uuid, alias, category, question, created_at, is_synced)
+       VALUES (?, ?, ?, ?, ?, 1)
+       ON CONFLICT(local_uuid) DO UPDATE SET is_synced = 1`,
+      [p.local_uuid, p.alias, p.category, p.question, p.created_at]
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────
