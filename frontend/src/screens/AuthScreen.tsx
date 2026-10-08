@@ -33,6 +33,18 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const MIN_PASSWORD = 8;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Mensajes de Supabase en lenguaje claro (el proyecto solo admite registro con correo). */
+function friendlyAuthError(message: string, u: (s: string) => string): string {
+  const m = message.toLowerCase();
+  if (m.includes('email not confirmed')) return u('Aún no confirmas tu correo. Abre el mensaje que te enviamos y vuelve a intentar.');
+  if (m.includes('invalid login credentials')) return u('Correo o contraseña incorrectos.');
+  if (m.includes('already registered')) return u('Ese correo ya tiene una cuenta. Inicia sesión.');
+  if (m.includes('rate limit')) return u('Hiciste muchos intentos. Espera unos minutos y vuelve a probar.');
+  if (m.includes('network') || m.includes('fetch')) return u('No hay conexión a internet. Inténtalo de nuevo cuando tengas red.');
+  return message;
+}
 
 export default function AuthScreen() {
   const u = useUi();
@@ -54,17 +66,14 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (!isLogin && !name.trim()) return setErrorField('name');
-    if (!contact.trim()) return setErrorField('contact');
+    if (!EMAIL_RE.test(contact.trim())) return setErrorField('contact');
     if (password.length < MIN_PASSWORD) return setErrorField('password');
 
     setErrorField('');
     setLoading(true);
 
-    // Correo si contiene "@"; de lo contrario se trata como teléfono.
-    const id = contact.trim();
-    const credentials = id.includes('@')
-      ? { email: id, password }
-      : { phone: id.replace(/[\s-]/g, ''), password };
+    // La cuenta se crea con correo: el proyecto de Supabase no tiene registro por teléfono.
+    const credentials = { email: contact.trim().toLowerCase(), password };
 
     const { data, error } = isLogin
       ? await supabase.auth.signInWithPassword(credentials)
@@ -73,7 +82,7 @@ export default function AuthScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert(u('No pudimos continuar'), error.message);
+      Alert.alert(u('No pudimos continuar'), friendlyAuthError(error.message, u));
       return;
     }
     if (isLogin) {
@@ -126,13 +135,19 @@ export default function AuthScreen() {
             )}
             <TextInput
               style={fieldStyle('contact')}
-              placeholder={u('Correo o teléfono')}
+              placeholder={u('Correo electrónico')}
               placeholderTextColor={colors.placeholder}
               value={contact}
               onChangeText={(v) => { setContact(v); setErrorField(''); }}
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
             />
+            {errorField === 'contact' && (
+              <Text style={styles.errorText}>{u('Escribe un correo válido, por ejemplo nombre@correo.com.')}</Text>
+            )}
             <TextInput
               style={fieldStyle('password')}
               placeholder={u('Contraseña mínimo {{n}} dígitos', { n: MIN_PASSWORD })}
