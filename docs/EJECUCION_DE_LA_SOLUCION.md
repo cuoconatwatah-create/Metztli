@@ -134,6 +134,11 @@ Metztli cuenta con un pipeline automatizado de integración continua que compila
 
 ---
 
+### Modalidad 5b: Web publicada en GitHub Pages 🌐
+Cada push a `main` publica la web en `https://cuoconatwatah-create.github.io/Metztli/` (workflow *Deploy Web Demo*). Requiere activar una vez *Settings → Pages → Source: GitHub Actions*. Detalle en [Despliegue y Presentación](DESPLIEGUE_Y_PRESENTACION.md).
+
+---
+
 ### Modalidad 5: Compilación en la Nube con Expo EAS Build ☁️
 Si dispones de cuenta Expo:
 ```bash
@@ -149,25 +154,29 @@ EAS Build generará un enlace de descarga directa del APK al finalizar la compil
 
 Metztli utiliza Supabase para la persistencia comunitaria en la nube (directorio médico, mitos culturales y sincronización del foro).
 
-### Opción A: Conexión al Supabase Cloud de Producción/Demo
-El archivo `.env` del frontend ya viene configurado para consumir el endpoint activo del proyecto. No se requiere configuración adicional.
+### Opción A: Conectarse a un proyecto de Supabase existente
+Copia la **URL** y la **publishable key** del proyecto (*Project Settings → API*) en `frontend/.env` (plantilla: `frontend/.env.example`). Nunca uses la clave `service_role` en la app.
 
-### Opción B: Despliegue en una Instancia Propia de Supabase
-Si deseas desplegar tu propia instancia de base de datos:
-
-1. Crea un nuevo proyecto en [supabase.com](https://supabase.com).
-2. Ve al **SQL Editor** en el panel de control de Supabase.
-3. Ejecuta en orden las siguientes migraciones ubicadas en `backend/supabase/migrations/`:
-   - `20240101000000_init.sql` (Crea tablas `directory_contacts`, `forum_posts`, `user_cycle_logs` y configura políticas RLS).
-   - `20240101000001_myths.sql` (Crea tabla `myths` con contenido semilla intercultural).
-4. Copia tu `Project URL` y `anon public key` desde *Project Settings > API*.
-5. Pégalas en tu archivo `frontend/.env`.
+### Opción B: Crear el backend desde cero
+1. Crea un proyecto en [supabase.com](https://supabase.com).
+2. En **SQL Editor**, pega y ejecuta **una sola vez** `backend/supabase/setup_completo.sql` (junta las migraciones `000` a `006`: tablas, RLS, etapas, roles y auditoría). También puedes aplicar `backend/supabase/migrations/*` en orden con el CLI (`npx supabase db push`).
+3. Verifica la conexión, las tablas y la seguridad:
+   ```bash
+   node scripts/check-supabase.mjs     # debe terminar en "Todo en orden"
+   ```
+4. Crea las cuentas desde la app y asigna los primeros roles con `backend/supabase/seed_roles_demo.sql`.
 
 ---
 
 ## 6. Verificación de Integridad y Pruebas
 
 Para corroborar la calidad y consistencia del código antes de cualquier entrega:
+
+### Pruebas automáticas:
+```bash
+cd backend  && npm install && npm run test:rls   # roles y RLS sobre PostgreSQL real (PGlite)
+cd frontend && npm run test:db                   # base local SQLite (requiere Node >= 22.5)
+```
 
 ### Verificación de Tipos TypeScript:
 ```bash

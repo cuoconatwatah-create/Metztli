@@ -102,6 +102,24 @@ erDiagram
         string language "es | miskitu | creole"
     }
 
+    USER_ROLES {
+        uuid user_id PK "auth.users (solo Supabase)"
+        string role "admin | user | auditor"
+        uuid assigned_by FK "Quien asigno el rol"
+        timestamp assigned_at "Fecha de asignacion"
+    }
+
+    AUDIT_LOG {
+        int id PK "Autoincrement (solo Supabase)"
+        uuid actor_id "Quien hizo la accion"
+        string actor_role "Rol al actuar"
+        string action "INSERT | UPDATE | DELETE"
+        string target_table "Tabla afectada"
+        string target_id "Fila afectada"
+        json details "Resumen sin datos personales"
+        timestamp created_at "Fecha"
+    }
+
     KICK_COUNTER_LOGS {
         int id PK "Autoincrement"
         string session_date "Fecha y hora de la sesion"
@@ -164,6 +182,8 @@ erDiagram
     SYMPTOMS ||--o{ DAILY_LOG_SYMPTOMS : "se_registra_en"
     DAILY_LOGS ||--o{ DAILY_LOG_HABITS : "cumple"
     PREGNANCIES ||--o{ KICK_COUNTER_LOGS : "registra_pataditas"
+    PROFILES ||--|| USER_ROLES : "tiene_un_rol"
+    USER_ROLES ||--o{ AUDIT_LOG : "sus_acciones_quedan_en"
     PREGNANCIES ||--o{ PRENATAL_CHECKUPS : "tiene_controles"
     USER_PROFILE ||--o{ CYCLES : "calcula_con"
     FORUM_POSTS ||--o{ DIRECTORY_CONTACTS : "apoyo_comunitario"
@@ -255,6 +275,17 @@ Cada etapa (menstruación, embarazo, menopausia) tiene sus propias pantallas (`f
 **Migración v2 → v3** (`frontend/src/db/pregnancySchema.ts`, automática e idempotente): crea las tablas, agrega las columnas de pataditas, mueve las fechas del perfil a un embarazo activo (si solo había fecha de parto, calcula la FUM y marca `lmp_estimated`), liga las pataditas existentes y elimina las columnas viejas de `user_profile`. `PRAGMA user_version = 3`.
 
 **Supabase:** `20240101000004_stages_pregnancy.sql` (con RLS por dueña; los controles y pataditas heredan el permiso del embarazo) y `20240101000005_myth_c5.sql` (nuevo mito).
+
+---
+
+### 3.3c Roles y auditoría (solo Supabase, migración 006)
+
+| Tabla | Clave | Detalle y normalización |
+| :--- | :--- | :--- |
+| `user_roles` | `user_id` (1:1 con `auth.users`) | `role` con `CHECK IN ('admin','user','auditor')`. Tabla aparte (no una columna de `profiles`) para que una usuaria no pueda cambiarse el rol con su propia política de perfil. Solo se escribe con `set_user_role()`. |
+| `audit_log` | `id` (BIGSERIAL) | Bitácora de solo escritura: un *trigger* rechaza `UPDATE`/`DELETE`. `actor_id` no es FK para que borrar una cuenta no altere la bitácora. `details` guarda un resumen sin datos personales. |
+
+Ambas cumplen 2FN (clave simple; ningún atributo depende de media clave). Permisos por rol en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md#5-roles-y-permisos-administradora--usuaria--auditora).
 
 ---
 
