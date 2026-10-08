@@ -74,7 +74,7 @@ export default function StageSelectionScreen() {
 
         <View style={{ flex: 1 }} />
         <StepDots total={5} active={1} />
-        <Button label={u('COMENZAR (Usuaria)')} onPress={handleContinue} disabled={!selected} />
+        <Button label={u('COMENZAR (Usuario)')} onPress={handleContinue} disabled={!selected} />
       </ScrollView>
     </SafeAreaView>
   );

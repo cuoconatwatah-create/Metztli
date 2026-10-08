@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// Metztli — Panel de la Administradora
+// Metztli — Panel de el Administrador
 //   Cuentas y roles · Moderación del foro · Mitos del Desmitificador
 // Los permisos los hace cumplir Supabase: si el rol no alcanza, la base rechaza la acción.
 // ─────────────────────────────────────────────────────────
@@ -135,8 +135,8 @@ export default function AdminPanelScreen() {
           <Text style={styles.lockedTitle}>{u('Acceso restringido')}</Text>
           <Text style={styles.muted}>
             {signedIn
-              ? u('Tu cuenta no tiene el rol de administradora.')
-              : u('Inicia sesión con una cuenta de administradora para entrar.')}
+              ? u('Tu cuenta no tiene el rol de administrador.')
+              : u('Inicia sesión con una cuenta de administrador para entrar.')}
           </Text>
         </View>
       </SafeAreaView>

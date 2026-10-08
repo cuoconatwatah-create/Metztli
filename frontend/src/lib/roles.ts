@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// Metztli — Roles (Administradora, Usuaria, Auditora): acceso a datos
+// Metztli — Roles (Administrador, Usuario, Auditor): acceso a datos
 //
 // Los permisos reales los aplica Supabase (RLS + funciones SECURITY DEFINER,
 // migración 006). Esto solo consulta y muestra lo que la base ya permite.
@@ -11,9 +11,9 @@ export type AppRole = 'admin' | 'user' | 'auditor';
 export const ROLES: AppRole[] = ['admin', 'user', 'auditor'];
 
 export const ROLE_LABELS: Record<AppRole, string> = {
-  admin: 'Administradora',
-  user: 'Usuaria',
-  auditor: 'Auditora',
+  admin: 'Administrador',
+  user: 'Usuario',
+  auditor: 'Auditor',
 };
 
 export function isRole(value: unknown): value is AppRole {
@@ -79,7 +79,7 @@ export async function fetchMyRole(): Promise<AppRole | null> {
   return isRole((row as any)?.role) ? ((row as any).role as AppRole) : 'user';
 }
 
-// ── Administradora ──
+// ── Administrador ──
 export async function adminListUsers(): Promise<AdminUser[]> {
   return unwrap(await supabase.rpc('admin_list_users')) as AdminUser[];
 }
@@ -114,7 +114,7 @@ export async function deleteMyth(id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-// ── Auditoría (administradora y auditora) ──
+// ── Auditoría (administrador y auditor) ──
 export async function fetchAuditStats(): Promise<AuditStats> {
   return unwrap(await supabase.rpc('audit_stats')) as AuditStats;
 }

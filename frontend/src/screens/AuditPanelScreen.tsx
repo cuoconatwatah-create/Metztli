@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// Metztli — Panel de la Auditora (solo lectura)
+// Metztli — Panel de el Auditor (solo lectura)
 //   Estadísticas agregadas y bitácora de acciones del personal.
 // Nunca muestra datos de salud de personas: solo conteos y quién hizo qué.
 // ─────────────────────────────────────────────────────────
@@ -67,8 +67,8 @@ export default function AuditPanelScreen() {
           <Text style={styles.lockedTitle}>{u('Acceso restringido')}</Text>
           <Text style={styles.muted}>
             {signedIn
-              ? u('Tu cuenta no tiene el rol de auditora.')
-              : u('Inicia sesión con una cuenta de auditora para entrar.')}
+              ? u('Tu cuenta no tiene el rol de auditor.')
+              : u('Inicia sesión con una cuenta de auditor para entrar.')}
           </Text>
         </View>
       </SafeAreaView>
