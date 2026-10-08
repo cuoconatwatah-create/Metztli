@@ -12,7 +12,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { colors, fonts, radius, shadow } from '@/theme';
 import { useUi } from '@/i18n/ui';
 
@@ -78,6 +78,34 @@ export function BackLink({ label, onPress }: { label?: string; onPress: () => vo
 
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.card, style]}>{children}</View>;
+}
+
+/** Fila de acceso (icono, título, descripción y flecha) usada en los inicios de cada etapa. */
+export function HubRow({
+  icon,
+  title,
+  desc,
+  onPress,
+  danger,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc?: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress} accessibilityRole="button" accessibilityLabel={desc ? `${title}. ${desc}` : title}>
+      <Card style={styles.hub}>
+        <View style={[styles.hubIcon, danger && { backgroundColor: colors.blush }]}>{icon}</View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.hubTitle, danger && { color: colors.carmin }]}>{title}</Text>
+          {desc ? <Text style={styles.hubDesc}>{desc}</Text> : null}
+        </View>
+        <ChevronRight size={18} color={colors.mutedSoft} />
+      </Card>
+    </TouchableOpacity>
+  );
 }
 
 export function SectionTitle({ children, style }: { children: React.ReactNode; style?: StyleProp<TextStyle> }) {
@@ -262,6 +290,10 @@ const styles = StyleSheet.create({
   backLinkText: { fontFamily: fonts.medium, fontSize: 12, color: colors.carmin },
 
   card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: 16, ...shadow.card },
+  hub: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  hubIcon: { width: 44, height: 44, borderRadius: radius.sm, backgroundColor: colors.avena, alignItems: 'center', justifyContent: 'center' },
+  hubTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.carbon },
+  hubDesc: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted, marginTop: 2 },
   sectionTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.carbon },
 
   chip: {

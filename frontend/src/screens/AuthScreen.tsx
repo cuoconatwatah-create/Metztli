@@ -23,6 +23,7 @@ import { Lock } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { restoreHealthBackup } from '@/db/cloud';
 import { setCloudBackupEnabled } from '@/lib/prefs';
+import { useStage, isStage } from '@/context/StageContext';
 import { Button, BackLink, StepDots } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
 import { useUi } from '@/i18n/ui';
@@ -37,6 +38,7 @@ export default function AuthScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { setStage } = useStage();
   const [isLogin, setIsLogin] = useState(route.params?.mode === 'login');
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
@@ -78,7 +80,10 @@ export default function AuthScreen() {
       // Si la usuaria ya tenía un respaldo en la nube, se recupera en este teléfono.
       try {
         const restored = await restoreHealthBackup();
-        if (restored && (restored.logs > 0 || restored.cycles > 0)) await setCloudBackupEnabled(true);
+        if (restored && (restored.logs > 0 || restored.cycles > 0 || restored.pregnancies > 0)) {
+          await setCloudBackupEnabled(true);
+          if (isStage(restored.stage)) await setStage(restored.stage);
+        }
       } catch (e) {
         console.warn('No se pudo restaurar el respaldo', e);
       }

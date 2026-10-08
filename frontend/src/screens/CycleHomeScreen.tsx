@@ -1,18 +1,16 @@
 // ─────────────────────────────────────────────────────────
-// Metztli — Calendario / Inicio (pantalla "Tu ciclo" del prototipo)
+// Metztli — Etapa Menstruación: Calendario / "Tu ciclo" (prototipo)
 // ─────────────────────────────────────────────────────────
 
 import React, { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, SafeAreaView, Alert, TouchableOpacity, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Bell, Droplet, Volume2, Moon, CalendarDays, Footprints, Siren, ChevronRight } from 'lucide-react-native';
+import { Bell, Droplet, Volume2, Moon, ChevronRight } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
-import { getUserProfile } from '@/db/database';
 import { useCycleCalculator } from '@/hooks/useCycleCalculator';
-import { usePregnancyCalculator } from '@/hooks/usePregnancyCalculator';
 import { loadDay, saveDay } from '@/lib/dailyLog';
-import type { DailyLog, LifeStageMode } from '@/types';
-import MascotCompanion from '@/components/MascotCompanion';
+import type { DailyLog } from '@/types';
+import StageSwitcher from '@/components/StageSwitcher';
 import CycleRing, { PHASE_COLORS, PHASE_COPY } from '@/components/CycleRing';
 import { Card, CurvedHeader } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
@@ -40,32 +38,22 @@ const MUCUS = [
   { id: 'elastico', label: 'Elástico' },
 ];
 
-const HEADER_TITLE: Record<LifeStageMode, string> = {
-  cycle: 'Tu ciclo',
-  pregnancy: 'Tu embarazo',
-  menopause: 'Tu etapa',
-};
-
 const LISTEN_TEXT = 'El dolor que detiene tu día merece atención. Registra tu intensidad y pide apoyo si no puedes seguir con tu día.';
 
-export default function HomeScreen() {
+export default function CycleHomeScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
-  const [mode, setMode] = useState<LifeStageMode>('cycle');
   const [day, setDay] = useState<DailyLog | null>(null);
   const [retreat, setRetreat] = useState(false);
 
   const { calculation: cycleCalc, recalculate } = useCycleCalculator();
-  const { calculation: pregCalc } = usePregnancyCalculator();
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       (async () => {
-        const profile = await getUserProfile();
         const today = await loadDay();
         if (!active) return;
-        if (profile) setMode(profile.current_mode);
         setDay(today);
         recalculate();
       })();
@@ -98,7 +86,7 @@ export default function HomeScreen() {
   };
 
   const showReminders = () => {
-    if (mode === 'cycle' && cycleCalc) {
+    if (cycleCalc) {
       Alert.alert(
         u('Recordatorios'),
         `${u('Próximo periodo')}: ${cycleCalc.nextPeriodDate}\n${u('Día de ovulación')}: ${cycleCalc.ovulationDate}`
@@ -208,60 +196,23 @@ export default function HomeScreen() {
     </>
   );
 
-  const HubRow = ({ icon, title, desc, route, danger }: { icon: React.ReactNode; title: string; desc: string; route: string; danger?: boolean }) => (
-    <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate(route)}>
-      <Card style={styles.hub}>
-        <View style={[styles.hubIcon, danger && { backgroundColor: colors.blush }]}>{icon}</View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.strong, danger && { color: colors.carmin }]}>{title}</Text>
-          <Text style={styles.muted}>{desc}</Text>
-        </View>
-        <ChevronRight size={18} color={colors.mutedSoft} />
-      </Card>
-    </TouchableOpacity>
-  );
-
-  const renderPregnancy = () => (
-    <>
-      <MascotCompanion stage="pregnancy" weekNumber={pregCalc?.gestationalWeeks} />
-      {pregCalc && (
-        <Card style={{ gap: 10 }}>
-          <Text style={styles.strong}>{u('Semana {{n}}', { n: pregCalc.gestationalWeeks })}</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${pregCalc.progressPercent}%` }]} />
-          </View>
-          <Text style={[styles.muted, { textAlign: 'right' }]}>{u('{{n}} días para conocer a tu bebé', { n: pregCalc.daysRemaining })}</Text>
-        </Card>
-      )}
-      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Desarrollo semana a semana')} desc="Explora los cambios de tu bebé" route="PregnancyTimeline" />
-      <HubRow icon={<Footprints size={20} color={colors.carmin} />} title={u('Contador de pataditas')} desc="Monitorea la actividad de tu bebé" route="KickCounter" />
-      <HubRow danger icon={<Siren size={20} color={colors.carmin} />} title={u('Señales de alarma')} desc="Qué hacer en una emergencia" route="ObstetricAlarm" />
-      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Mi embarazo completo')} desc="Triage, semáforo y auxilio por SMS" route="Embarazo" />
-    </>
-  );
-
-  const renderMenopause = () => (
-    <>
-      <MascotCompanion stage="menopause" />
-      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Desmitificador')} desc="Mitos y realidades de la menopausia" route="Desmitificador" />
-    </>
-  );
-
   return (
     <SafeAreaView style={[styles.safeArea, retreat && styles.safeAreaDark]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         <CurvedHeader
           eyebrow={formatToday(u)}
-          title={u(HEADER_TITLE[mode])}
+          title={u('Tu ciclo')}
           right={
             <TouchableOpacity style={styles.bell} onPress={showReminders} accessibilityLabel={u('Recordatorios')} accessibilityRole="button">
               <Bell size={18} color={colors.white} />
             </TouchableOpacity>
           }
-        />
+        >
+          <StageSwitcher />
+        </CurvedHeader>
 
         <View style={styles.body}>
-          {mode === 'cycle' ? renderCycle() : mode === 'pregnancy' ? renderPregnancy() : renderMenopause()}
+          {renderCycle()}
 
           <TouchableOpacity activeOpacity={0.9} onPress={toggleRetreat} style={[styles.retreat, retreat && { backgroundColor: colors.bosque }]}>
             <Moon size={18} color={retreat ? colors.avena : colors.bosque} />
@@ -338,10 +289,6 @@ const styles = StyleSheet.create({
   listenEyebrow: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: colors.carmin, marginBottom: 2 },
   listenTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.carbon, lineHeight: 19 },
   listenBody: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted, marginTop: 4, lineHeight: 16 },
-  hub: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  hubIcon: { width: 44, height: 44, borderRadius: radius.sm, backgroundColor: colors.avena, alignItems: 'center', justifyContent: 'center' },
-  progressTrack: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: colors.carmin, borderRadius: 4 },
   retreat: {
     flexDirection: 'row',
     alignItems: 'center',

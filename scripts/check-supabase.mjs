@@ -37,7 +37,7 @@ try {
   process.exit(1);
 }
 
-const tables = ['myths', 'directory_contacts', 'forum_posts', 'user_cycle_logs', 'cycles', 'symptoms', 'daily_logs', 'daily_log_symptoms', 'daily_log_habits'];
+const tables = ['profiles', 'pregnancies', 'prenatal_checkups', 'kick_sessions', 'myths', 'directory_contacts', 'forum_posts', 'user_cycle_logs', 'cycles', 'symptoms', 'daily_logs', 'daily_log_symptoms', 'daily_log_habits'];
 for (const t of tables) {
   const r = await fetch(`${url}/rest/v1/${t}?select=*&limit=1`, { headers });
   if (r.status === 200) ok(`tabla ${t}`);
@@ -46,15 +46,15 @@ for (const t of tables) {
 }
 
 // Los datos íntimos deben estar protegidos por RLS: sin sesión no se ve nada
-for (const t of ['daily_logs', 'cycles']) {
-  const r = await fetch(`${url}/rest/v1/${t}?select=id&limit=1`, { headers });
+for (const t of ['daily_logs', 'cycles', 'profiles', 'pregnancies']) {
+  const r = await fetch(`${url}/rest/v1/${t}?select=*&limit=1`, { headers });
   if (r.status === 200 && (await r.json()).length === 0) ok(`RLS ${t}: anónimo no ve filas`);
   else if (r.status === 200) bad(`RLS ${t}: ¡un anónimo puede leer filas!`);
 }
 
 // Catálogo y mitos sembrados
 const myths = await fetch(`${url}/rest/v1/myths?select=id`, { headers });
-if (myths.status === 200) (await myths.json()).length >= 11 ? ok('mitos sembrados (11)') : bad('faltan mitos sembrados');
+if (myths.status === 200) (await myths.json()).length >= 12 ? ok('mitos sembrados (12)') : bad('faltan mitos sembrados');
 const syms = await fetch(`${url}/rest/v1/symptoms?select=code`, { headers });
 if (syms.status === 200) (await syms.json()).length >= 23 ? ok('catálogo de síntomas sembrado (23)') : bad('faltan síntomas sembrados');
 

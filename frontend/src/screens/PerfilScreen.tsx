@@ -6,24 +6,20 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Share, Alert, Switch } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Users, PhoneCall, Baby, CalendarDays, HeartHandshake, LogOut, Share2, ChevronRight } from 'lucide-react-native';
-import { getDailyLogs, getUserProfile, updateUserMode } from '@/db/database';
+import { getDailyLogs } from '@/db/database';
 import { supabase } from '@/lib/supabase';
 import { isCloudBackupEnabled, setCloudBackupEnabled } from '@/lib/prefs';
 import { deleteHealthBackup, pushHealthBackup } from '@/db/cloud';
 import { localISODate } from '@/lib/dailyLog';
-import type { DailyLog, LifeStageMode } from '@/types';
+import type { DailyLog } from '@/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { Card, Chip, CurvedHeader, SectionTitle } from '@/components/ui';
+import StageSwitcher from '@/components/StageSwitcher';
+import { useStage } from '@/context/StageContext';
+import { Card, CurvedHeader, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
 import { useUi, type UiFn } from '@/i18n/ui';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-const STAGES: { mode: LifeStageMode; label: string }[] = [
-  { mode: 'cycle', label: 'Menstruación' },
-  { mode: 'pregnancy', label: 'Embarazo' },
-  { mode: 'menopause', label: 'Menopausia' },
-];
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -61,7 +57,7 @@ export default function PerfilScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
   const [name, setName] = useState('');
-  const [mode, setMode] = useState<LifeStageMode>('cycle');
+  const { stage: mode } = useStage();
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [backup, setBackup] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -70,7 +66,6 @@ export default function PerfilScreen() {
     useCallback(() => {
       let active = true;
       (async () => {
-        const profile = await getUserProfile();
         const monthLogs = await getDailyLogs(daysAgo(30), localISODate());
         let display = '';
         try {
@@ -83,7 +78,6 @@ export default function PerfilScreen() {
         const backupOn = await isCloudBackupEnabled();
         if (!active) return;
         setBackup(backupOn);
-        if (profile) setMode(profile.current_mode);
         setLogs(monthLogs);
         setName(display);
       })();
@@ -92,11 +86,6 @@ export default function PerfilScreen() {
       };
     }, [])
   );
-
-  const changeMode = async (next: LifeStageMode) => {
-    setMode(next);
-    await updateUserMode(next);
-  };
 
   const last7 = logs.filter((l) => l.log_date >= daysAgo(6));
   const prev7 = logs.filter((l) => l.log_date >= daysAgo(13) && l.log_date < daysAgo(6));
@@ -141,7 +130,7 @@ export default function PerfilScreen() {
         await setCloudBackupEnabled(true);
         setBackup(true);
         const res = await pushHealthBackup();
-        Alert.alert(u('Respaldo guardado'), u('Se respaldaron {{logs}} registros y {{cycles}} ciclos.', { logs: res?.logs ?? 0, cycles: res?.cycles ?? 0 }));
+        Alert.alert(u('Respaldo guardado'), u('Se respaldaron {{logs}} registros y {{cycles}} ciclos.', { logs: res?.logs ?? 0, cycles: res?.cycles ?? 0 }) + (res?.pregnancies ? ' ' + u('Y {{n}} embarazo(s) con sus controles.', { n: res.pregnancies }) : ''));
       } catch (e: any) {
         await setCloudBackupEnabled(false);
         setBackup(false);
@@ -211,11 +200,7 @@ export default function PerfilScreen() {
 
         <View style={styles.body}>
           <SectionTitle>{u('Mi etapa')}</SectionTitle>
-          <View style={styles.stageRow}>
-            {STAGES.map((st) => (
-              <Chip key={st.mode} label={u(st.label)} active={mode === st.mode} onPress={() => changeMode(st.mode)} />
-            ))}
-          </View>
+          <StageSwitcher tone="dark" />
 
           <SectionTitle>{u('Resumen')} · {month}</SectionTitle>
           <View style={styles.stats}>
@@ -259,7 +244,7 @@ export default function PerfilScreen() {
             <Row icon={<PhoneCall size={18} color={colors.carmin} />} label={u('Directorio de emergencias')} onPress={() => navigation.navigate('Directorio')} />
             <Row icon={<CalendarDays size={18} color={colors.carmin} />} label={u('Calendario completo')} onPress={() => navigation.navigate('BrujulaLunar')} />
             {mode === 'pregnancy' && (
-              <Row icon={<Baby size={18} color={colors.carmin} />} label={u('Mi embarazo, triage y auxilio')} onPress={() => navigation.navigate('Embarazo')} />
+              <Row icon={<Baby size={18} color={colors.carmin} />} label={u('Triage y auxilio por SMS')} onPress={() => navigation.navigate('Embarazo')} />
             )}
             <Row icon={<HeartHandshake size={18} color={colors.carmin} />} label={u('Mi código de acompañante')} onPress={() => navigation.navigate('TribuCode')} />
             <Row icon={<Users size={18} color={colors.carmin} />} label={u('Ver como acompañante')} onPress={() => navigation.navigate('PartnerMain')} />

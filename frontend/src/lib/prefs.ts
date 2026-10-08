@@ -32,3 +32,14 @@ export async function isCloudBackupEnabled(): Promise<boolean> {
 export async function setCloudBackupEnabled(enabled: boolean): Promise<void> {
   await write(BACKUP_KEY, enabled ? '1' : '0');
 }
+
+const STAGE_KEY = 'current_stage';
+
+/** Etapa activa guardada en el dispositivo (respaldo de la base local; necesaria en web). */
+export async function getStagePref(): Promise<string | null> {
+  return read(STAGE_KEY);
+}
+
+export async function setStagePref(stage: string): Promise<void> {
+  await write(STAGE_KEY, stage);
+}

@@ -6,7 +6,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { CloudRain, Cloud, Sun, Ear, Sparkles, PhoneCall } from 'lucide-react-native';
-import { getUserProfile } from '@/db/database';
+import { useStage } from '@/context/StageContext';
 import { loadDay, saveDay } from '@/lib/dailyLog';
 import GreenPharmacyModal from '@/components/GreenPharmacyModal';
 import { Button, Card, Chip, CurvedHeader, LevelBar } from '@/components/ui';
@@ -14,16 +14,35 @@ import { colors, fonts, radius } from '@/theme';
 import type { LifeStageMode } from '@/types';
 import { useUi } from '@/i18n/ui';
 
-// Los ids coinciden con los que entiende GreenPharmacyModal cuando existe equivalente.
-const NOTES = [
-  { id: 'cramps', label: 'Cólicos' },
-  { id: 'low_energy', label: 'Fatiga extrema' },
-  { id: 'sweet_cravings', label: 'Antojos dulces' },
-  { id: 'body_image', label: 'Odio al espejo' },
-  { id: 'mental_load', label: 'Carga mental' },
-  { id: 'disabling_pain', label: 'Dolor incapacitante' },
-  { id: 'heavy_flow', label: 'Sangrado denso' },
-];
+// Los ids son códigos del catálogo "symptoms" (tabla daily_log_symptoms).
+const NOTES_BY_STAGE: Record<LifeStageMode, { id: string; label: string }[]> = {
+  cycle: [
+    { id: 'cramps', label: 'Cólicos' },
+    { id: 'low_energy', label: 'Fatiga extrema' },
+    { id: 'sweet_cravings', label: 'Antojos dulces' },
+    { id: 'body_image', label: 'Odio al espejo' },
+    { id: 'mental_load', label: 'Carga mental' },
+    { id: 'disabling_pain', label: 'Dolor incapacitante' },
+    { id: 'heavy_flow', label: 'Sangrado denso' },
+  ],
+  pregnancy: [
+    { id: 'nausea', label: 'Náuseas' },
+    { id: 'fatigue', label: 'Cansancio' },
+    { id: 'swelling', label: 'Hinchazón' },
+    { id: 'backPain', label: 'Dolor de espalda' },
+    { id: 'headache', label: 'Dolor de cabeza' },
+    { id: 'dizziness', label: 'Mareos' },
+    { id: 'kicks', label: 'Siento a mi bebé moverse' },
+  ],
+  menopause: [
+    { id: 'hotFlashes', label: 'Bochornos' },
+    { id: 'insomnia', label: 'Insomnio' },
+    { id: 'fatigue', label: 'Cansancio' },
+    { id: 'headache', label: 'Dolor de cabeza' },
+    { id: 'mood_sensitive', label: 'Ánimo sensible' },
+    { id: 'mood_low', label: 'Ánimo bajo' },
+  ],
+};
 
 const WEATHER = [
   { id: 'lluvia', label: 'Lluvia', Icon: CloudRain },
@@ -37,7 +56,70 @@ const STAGE_LABEL: Record<LifeStageMode, string> = {
   menopause: 'Menopausia',
 };
 
-function translateDay(vitality: number, discomfort: number, notes: string[]) {
+interface DayTranslation {
+  alert: boolean;
+  eyebrow: string;
+  title: string;
+  habit: string;
+}
+
+function translateDay(stage: LifeStageMode, vitality: number, discomfort: number, notes: string[]): DayTranslation {
+  if (stage === 'pregnancy') {
+    if (discomfort >= 5 || (notes.includes('headache') && notes.includes('swelling')) || (notes.includes('headache') && notes.includes('dizziness'))) {
+      return {
+        alert: true,
+        eyebrow: 'TU CUERPO PIDE ATENCIÓN',
+        title: 'Estas señales juntas pueden ser peligrosas en el embarazo.',
+        habit: 'Ve hoy mismo a tu centro de salud o avisa a tu partera. No esperes a que pasen solas.',
+      };
+    }
+    if (vitality <= 2 || notes.includes('fatigue')) {
+      return {
+        alert: false,
+        eyebrow: 'DESCANSO QUE ACOMPAÑA',
+        title: 'Hoy tu cuerpo trabaja por dos: necesita pausa.',
+        habit: 'Hábito de hoy: descansa con los pies en alto, toma agua y cuenta las pataditas de tu bebé.',
+      };
+    }
+    return {
+      alert: false,
+      eyebrow: 'MOVIMIENTO QUE ACOMPAÑA',
+      title: 'Hoy tu cuerpo puede moverse con suavidad.',
+      habit: 'Hábito de hoy: una caminata corta, mucha agua y tu conteo de pataditas.',
+    };
+  }
+  if (stage === 'menopause') {
+    if (discomfort >= 5) {
+      return {
+        alert: true,
+        eyebrow: 'TU CUERPO PIDE ATENCIÓN',
+        title: 'Un malestar que te impide hacer tu día merece revisión médica.',
+        habit: 'Acude a tu centro de salud. Si es muy intenso, no esperes.',
+      };
+    }
+    if (notes.includes('hotFlashes')) {
+      return {
+        alert: false,
+        eyebrow: 'ALIVIO QUE ACOMPAÑA',
+        title: 'Los bochornos pasan: tu cuerpo se está adaptando.',
+        habit: 'Hábito de hoy: ropa ligera por capas, agua fresca y evitar comidas muy picantes.',
+      };
+    }
+    if (notes.includes('insomnia') || vitality <= 2) {
+      return {
+        alert: false,
+        eyebrow: 'DESCANSO QUE ACOMPAÑA',
+        title: 'Hoy tu cuerpo necesita pausa, no exigencia.',
+        habit: 'Hábito de hoy: cena liviano y baja las luces una hora antes de dormir.',
+      };
+    }
+    return {
+      alert: false,
+      eyebrow: 'MOVIMIENTO QUE ACOMPAÑA',
+      title: 'Hoy tu cuerpo necesita espacio y movimiento sin exigencia.',
+      habit: 'Hábito de hoy: 15 minutos de caminata al sol para cuidar tus huesos.',
+    };
+  }
   if (discomfort >= 5 || notes.includes('disabling_pain')) {
     return {
       alert: true,
@@ -65,26 +147,25 @@ function translateDay(vitality: number, discomfort: number, notes: string[]) {
 export default function ComoHabitasScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
-  const [stage, setStage] = useState<LifeStageMode>('cycle');
+  const { stage } = useStage();
+  const notesList = NOTES_BY_STAGE[stage];
   const [vitality, setVitality] = useState(3);
   const [discomfort, setDiscomfort] = useState(1);
   const [weather, setWeather] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
-  const [result, setResult] = useState<ReturnType<typeof translateDay> | null>(null);
+  const [result, setResult] = useState<DayTranslation | null>(null);
   const [showPharmacy, setShowPharmacy] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        const profile = await getUserProfile();
-        if (profile) setStage(profile.current_mode);
         const day = await loadDay();
         setVitality(day.vitality ?? 3);
         setDiscomfort(day.discomfort ?? 1);
         setWeather(day.weather);
-        setNotes(day.symptoms);
+        setNotes(day.symptoms.filter((id) => NOTES_BY_STAGE[stage].some((n) => n.id === id)));
       })();
-    }, [])
+    }, [stage])
   );
 
   const toggleNote = (id: string) => {
@@ -94,7 +175,7 @@ export default function ComoHabitasScreen() {
 
   const translate = async () => {
     await saveDay({ vitality, discomfort, weather, symptoms: notes });
-    setResult(translateDay(vitality, discomfort, notes));
+    setResult(translateDay(stage, vitality, discomfort, notes));
   };
 
   return (
@@ -171,7 +252,7 @@ export default function ComoHabitasScreen() {
             <Text style={styles.title}>{u('¿Qué más notas?')}</Text>
             <Text style={styles.muted}>{u('Puedes elegir más de una opción')}</Text>
             <View style={styles.chips}>
-              {NOTES.map((n) => (
+              {notesList.map((n) => (
                 <Chip key={n.id} label={u(n.label)} active={notes.includes(n.id)} onPress={() => toggleNote(n.id)} />
               ))}
             </View>
@@ -194,6 +275,10 @@ export default function ComoHabitasScreen() {
                 <TouchableOpacity style={styles.callBtn} onPress={() => navigation.navigate('Directorio')} accessibilityRole="button">
                   <PhoneCall size={14} color={colors.carmin} />
                   <Text style={styles.callText}>{u('Ver centros de salud cercanos')}</Text>
+                </TouchableOpacity>
+              ) : stage === 'pregnancy' ? (
+                <TouchableOpacity style={styles.callBtn} onPress={() => navigation.navigate('ObstetricAlarm')} accessibilityRole="button">
+                  <Text style={styles.callText}>{u('Ver señales de alarma del embarazo')}</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={styles.callBtn} onPress={() => setShowPharmacy(true)} accessibilityRole="button">

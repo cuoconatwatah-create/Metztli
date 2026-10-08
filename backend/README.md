@@ -35,6 +35,8 @@ Metztli usa Supabase (PostgreSQL + Auth + RLS) como nube; la app funciona sin co
 | `…001_myths.sql` | Mitos y realidades (lectura pública) con datos iniciales |
 | `…002_daily_logs_normalized.sql` | `cycles`, `symptoms`, `daily_logs`, `daily_log_symptoms`, `daily_log_habits` (2FN) con RLS por dueña |
 | `…003_forum_hardening.sql` | Límites de texto, categorías válidas y `user_id` solo propio en el foro |
+| `…004_stages_pregnancy.sql` | `profiles` (etapa activa e idioma, con trigger), `pregnancies`, `prenatal_checkups`, `kick_sessions` con RLS |
+| `…005_myth_c5.sql` | Mito nuevo del Desmitificador (tiene audios en Mískitu en la app) |
 
 `supabase/setup_completo.sql` es la concatenación de todas, generada para pegar en el SQL Editor. Si cambias una migración, regenera el archivo.
 
@@ -44,6 +46,6 @@ Metztli usa Supabase (PostgreSQL + Auth + RLS) como nube; la app funciona sin co
 | :--- | :--- | :--- |
 | Foro (Tribu) | ↑ publicaciones pendientes, ↓ últimas 100 de la comunidad | Al abrir el foro y al volver la conexión. Anónimo: no se envía `user_id` |
 | Mitos | ↓ | Al abrir el Desmitificador |
-| Registros diarios y ciclos | ↑ últimos 90 días, ↓ al iniciar sesión | **Solo si la usuaria activa "Respaldar mis datos en la nube"** en Perfil (apagado por defecto) y tiene sesión |
+| Registros diarios, ciclos, embarazos, controles prenatales, pataditas y etapa activa | ↑ últimos 90 días de registros y todo lo de embarazo, ↓ al iniciar sesión | **Solo si la usuaria activa "Respaldar mis datos en la nube"** en Perfil (apagado por defecto) y tiene sesión |
 
 El correo debe confirmarse antes de iniciar sesión (configuración actual del proyecto, *Authentication → Providers → Email → Confirm email*).

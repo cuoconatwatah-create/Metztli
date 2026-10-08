@@ -5,12 +5,9 @@
 import './global.css'; // NativeWind CSS
 
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CalendarDays, LayoutGrid, BookOpen, User, Plus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useUi } from '@/i18n/ui';
 import { loadStoredLanguage } from '@/i18n/storage';
@@ -35,7 +32,11 @@ import { seedDatabase } from '@/db/seedData';
 import { supabase } from '@/lib/supabase';
 import { pushHealthBackup } from '@/db/cloud';
 import { isCloudBackupEnabled } from '@/lib/prefs';
-import { colors, fonts, shadow } from '@/theme';
+import { colors, fonts } from '@/theme';
+import { StageProvider, isStage } from '@/context/StageContext';
+import { getUserProfile } from '@/db/database';
+import { getStagePref } from '@/lib/prefs';
+import type { LifeStageMode } from '@/types';
 
 // Screens
 import LanguageSelectionScreen from '@/screens/LanguageSelectionScreen';
@@ -44,10 +45,7 @@ import PartnerDashboardScreen from '@/screens/PartnerDashboardScreen';
 import StageSelectionScreen from '@/screens/StageSelectionScreen';
 import TribuCodeScreen from '@/screens/TribuCodeScreen';
 import AuthScreen from '@/screens/AuthScreen';
-import HomeScreen from '@/screens/HomeScreen';
-import CuerpoMenteScreen from '@/screens/CuerpoMenteScreen';
-import AprendizajeScreen from '@/screens/AprendizajeScreen';
-import PerfilScreen from '@/screens/PerfilScreen';
+import MainTabs from '@/navigation/StageTabs';
 import ArticleScreen from '@/screens/ArticleScreen';
 import MiCicloScreen from '@/screens/MiCicloScreen';
 import ComoHabitasScreen from '@/screens/ComoHabitasScreen';
@@ -62,84 +60,6 @@ import KickCounterScreen from '@/screens/KickCounterScreen';
 import ObstetricAlarmScreen from '@/screens/ObstetricAlarmScreen';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
-
-const TAB_ICONS: Record<string, typeof CalendarDays> = {
-  CalendarioTab: CalendarDays,
-  CuerpoMenteTab: LayoutGrid,
-  AprendizajeTab: BookOpen,
-  PerfilTab: User,
-};
-
-/** Barra inferior del prototipo: 4 pestañas y un botón central de registro rápido. */
-function AppTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
-  const u = useUi();
-
-  return (
-    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const label = (options.title ?? route.name) as string;
-
-        if (route.name === 'RegistrarTab') {
-          return (
-            <View key={route.key} style={styles.fabSlot}>
-              <TouchableOpacity
-                style={styles.fab}
-                onPress={() => navigation.getParent()?.navigate('ComoHabitas')}
-                accessibilityRole="button"
-                accessibilityLabel={u('Registrar mi día')}
-              >
-                <Plus size={28} color={colors.white} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-          );
-        }
-
-        const focused = state.index === index;
-        const Icon = TAB_ICONS[route.name];
-        const color = focused ? colors.carmin : colors.mutedSoft;
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            style={styles.tabItem}
-            onPress={() => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
-            accessibilityLabel={label}
-          >
-            <Icon size={22} color={color} strokeWidth={focused ? 2.4 : 2} />
-            <Text style={[styles.tabLabel, { color }]} numberOfLines={1}>
-              {label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-const Placeholder = () => null;
-
-function MainTabs() {
-  const u = useUi();
-
-  return (
-    <Tab.Navigator tabBar={(props) => <AppTabBar {...props} />} screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="CalendarioTab" component={HomeScreen} options={{ title: u('Calendario') }} />
-      <Tab.Screen name="CuerpoMenteTab" component={CuerpoMenteScreen} options={{ title: u('Cuerpo Mente') }} />
-      <Tab.Screen name="RegistrarTab" component={Placeholder} options={{ title: u('Registrar') }} />
-      <Tab.Screen name="AprendizajeTab" component={AprendizajeScreen} options={{ title: u('Aprendizaje') }} />
-      <Tab.Screen name="PerfilTab" component={PerfilScreen} options={{ title: u('Perfil') }} />
-    </Tab.Navigator>
-  );
-}
-
 const headerOptions = {
   headerShown: true,
   headerStyle: { backgroundColor: colors.avena },
@@ -160,6 +80,7 @@ export default function App() {
     'Inter-ExtraBold': Inter_800ExtraBold,
   });
   const [isReady, setIsReady] = useState(false);
+  const [initialStage, setInitialStage] = useState<LifeStageMode>('cycle');
   const [initialRoute, setInitialRoute] = useState<'LanguageSelection' | 'Welcome' | 'Auth' | 'MainTabs'>('LanguageSelection');
 
   useEffect(() => {
@@ -175,6 +96,10 @@ export default function App() {
 
           // 2. Pre-seed offline data
           await seedDatabase();
+
+          // 2b. Etapa activa (menstruación, embarazo o menopausia)
+          const profile = await getUserProfile();
+          if (profile && isStage(profile.current_mode)) setInitialStage(profile.current_mode);
 
           // 3. Check auth state
           const { data: { session } } = await supabase.auth.getSession();
@@ -195,6 +120,8 @@ export default function App() {
           }
         } else {
           // Fallback for Web
+          const savedStage = await getStagePref();
+          if (isStage(savedStage)) setInitialStage(savedStage);
           const { data: { session } } = await supabase.auth.getSession();
           const hasLaunched = localStorage.getItem('has_launched');
 
@@ -232,6 +159,7 @@ export default function App() {
   }
 
   return (
+    <StageProvider initial={initialStage}>
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
@@ -255,6 +183,7 @@ export default function App() {
         <Stack.Screen name="ObstetricAlarm" component={ObstetricAlarmScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </StageProvider>
   );
 }
 
@@ -264,31 +193,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.avena,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 10,
-    paddingHorizontal: 8,
-    ...shadow.card,
-    shadowOffset: { width: 0, height: -4 },
-  },
-  tabItem: { flex: 1, alignItems: 'center', gap: 3, paddingBottom: 2 },
-  tabLabel: { fontFamily: fonts.semibold, fontSize: 9.5 },
-  fabSlot: { flex: 1, alignItems: 'center' },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.carmin,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -28,
-    borderWidth: 4,
-    borderColor: colors.avena,
-    ...shadow.glow,
   },
 });

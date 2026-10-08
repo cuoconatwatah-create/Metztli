@@ -74,11 +74,41 @@ erDiagram
         string habit_code PK "water, walk, breathe"
     }
 
+    PREGNANCIES {
+        int id PK "Autoincrement"
+        string lmp_date UK "FUM (la fecha de parto = FUM + 280 dias, no se guarda)"
+        int lmp_estimated "1 si se calculo desde la fecha de parto"
+        string status "active | ended (solo uno activo)"
+        string ended_on "Fecha de termino"
+    }
+
+    PRENATAL_CHECKUPS {
+        int id PK "Autoincrement"
+        string local_uuid UK "UUID idempotente cliente"
+        int pregnancy_id FK "pregnancies.id"
+        string checkup_date "Fecha del control"
+        string kind "control | ecografia | laboratorio | otro"
+        string place "Lugar (opcional)"
+        real weight_kg "20-300"
+        int bp_systolic "50-260"
+        int bp_diastolic "30-160"
+        int done "0 = agendado, 1 = realizado"
+    }
+
+    PROFILES {
+        uuid user_id PK "auth.users (solo Supabase)"
+        string display_name "Nombre"
+        string current_stage "cycle | pregnancy | menopause"
+        string language "es | miskitu | creole"
+    }
+
     KICK_COUNTER_LOGS {
         int id PK "Autoincrement"
         string session_date "Fecha y hora de la sesion"
         int kick_count "Numero total de pataditas"
         int duration_minutes "Duracion en minutos"
+        int pregnancy_id FK "pregnancies.id (nullable)"
+        string local_uuid UK "UUID idempotente cliente"
     }
 
     USER_CYCLE_LOGS {
@@ -133,7 +163,8 @@ erDiagram
     DAILY_LOGS ||--o{ DAILY_LOG_SYMPTOMS : "incluye"
     SYMPTOMS ||--o{ DAILY_LOG_SYMPTOMS : "se_registra_en"
     DAILY_LOGS ||--o{ DAILY_LOG_HABITS : "cumple"
-    USER_PROFILE ||--o{ KICK_COUNTER_LOGS : "monitorea_en_embarazo"
+    PREGNANCIES ||--o{ KICK_COUNTER_LOGS : "registra_pataditas"
+    PREGNANCIES ||--o{ PRENATAL_CHECKUPS : "tiene_controles"
     USER_PROFILE ||--o{ CYCLES : "calcula_con"
     FORUM_POSTS ||--o{ DIRECTORY_CONTACTS : "apoyo_comunitario"
 ```
@@ -206,6 +237,24 @@ Un renglón por fecha con los datos atómicos del día. Los datos multivaluados 
 **Migración automática v1 → v2** (`frontend/src/db/schema.ts`, se ejecuta al abrir la app y es idempotente): renombra la tabla antigua, crea el esquema nuevo, reparte los JSON en columnas y filas hijas, descarta valores fuera de rango y elimina la tabla antigua. `PRAGMA user_version = 2`.
 
 **Supabase:** `backend/supabase/migrations/20240101000002_daily_logs_normalized.sql` crea el mismo modelo (con `user_id`, `UNIQUE (user_id, log_date)` y RLS por dueña). Aún no está conectado; la clave natural `(user_id, log_date)` permitirá sincronizar sin `local_uuid`.
+
+---
+
+### 3.3b Etapas separadas: embarazo, controles y perfil (esquema v3)
+
+Cada etapa (menstruación, embarazo, menopausia) tiene sus propias pantallas (`frontend/src/navigation/StageTabs.tsx`); la etapa activa se guarda en `user_profile.current_mode` (local) y en `profiles.current_stage` (nube, solo con respaldo activado).
+
+| Tabla | Clave | Notas de normalización |
+| :--- | :--- | :--- |
+| `pregnancies` | `id` (autoincremental / uuid) | Un embarazo es una entidad propia. Antes `lmp_date` y `due_date` eran columnas sueltas de `user_profile` y nada las llenaba. Solo se guarda la FUM: la fecha probable de parto se **deriva** (FUM + 280 días), así no hay dependencia transitiva. Índice único parcial: un solo embarazo `active`. |
+| `prenatal_checkups` | `id`; `local_uuid` único | FK a `pregnancies` (`ON DELETE CASCADE`). `CHECK` en peso (20–300 kg) y presión (sistólica 50–260, diastólica 30–160). `done` distingue cita agendada de realizada. |
+| `kick_counter_logs` | `id` | Se agregan `pregnancy_id` (FK, `ON DELETE SET NULL`: las pataditas sobreviven si se borra el embarazo) y `local_uuid` para sincronizar. |
+| `profiles` (solo Supabase) | `user_id` | 1:1 con `auth.users`; un trigger lo crea al registrarse. Guarda etapa activa e idioma. |
+| `kick_sessions` (solo Supabase) | `id`; único `(pregnancy_id, local_uuid)` | Espejo de `kick_counter_logs`. |
+
+**Migración v2 → v3** (`frontend/src/db/pregnancySchema.ts`, automática e idempotente): crea las tablas, agrega las columnas de pataditas, mueve las fechas del perfil a un embarazo activo (si solo había fecha de parto, calcula la FUM y marca `lmp_estimated`), liga las pataditas existentes y elimina las columnas viejas de `user_profile`. `PRAGMA user_version = 3`.
+
+**Supabase:** `20240101000004_stages_pregnancy.sql` (con RLS por dueña; los controles y pataditas heredan el permiso del embarazo) y `20240101000005_myth_c5.sql` (nuevo mito).
 
 ---
 

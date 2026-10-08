@@ -157,6 +157,14 @@ export const ARTICLES: Article[] = [
   },
 ];
 
+/** Etapas a las que aplica un artículo; los temas generales (salud mental, sexual) aplican a todas. */
+export function articleStages(article: Article): ('cycle' | 'pregnancy' | 'menopause')[] {
+  if (article.stage === 'Salud menstrual') return ['cycle'];
+  if (article.stage === 'Embarazo') return ['pregnancy'];
+  if (article.stage === 'Menopausia') return ['menopause'];
+  return ['cycle', 'pregnancy', 'menopause'];
+}
+
 export const ARTICLE_FILTERS: { value: 'todos' | ArticleCategory; label: string }[] = [
   { value: 'todos', label: 'Todos' },
   { value: 'nutricion', label: 'Nutrición' },

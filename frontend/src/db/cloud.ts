@@ -8,7 +8,19 @@
 // ─────────────────────────────────────────────────────────
 
 import { supabase } from '@/lib/supabase';
-import { addCycle, addDailyLog, getCycles, getDailyLog, getDailyLogs } from '@/db/database';
+import i18n from 'i18next';
+import {
+  addCycle,
+  addDailyLog,
+  getAllCheckupsWithLmp,
+  getAllKicksWithLmp,
+  getAllPregnancies,
+  getCycles,
+  getDailyLog,
+  getDailyLogs,
+  importPregnancy,
+} from '@/db/database';
+import { isCloudBackupEnabled } from '@/lib/prefs';
 import { localISODate } from '@/lib/dailyLog';
 import type { DailyLog } from '@/types';
 
@@ -28,6 +40,124 @@ function check<T>(res: { data: T | null; error: { message: string } | null }, wh
 export interface BackupResult {
   logs: number;
   cycles: number;
+  pregnancies: number;
+  stage?: string;
+}
+
+/** Guarda la etapa activa y el idioma en el perfil. Solo actúa con sesión y respaldo activado. */
+export async function pushProfile(stage: string): Promise<void> {
+  if (!(await isCloudBackupEnabled())) return;
+  const uid = await currentUserId();
+  if (!uid) return;
+  const lang = ['es', 'miskitu', 'creole'].includes(i18n.language) ? i18n.language : 'es';
+  check(
+    await supabase.from('profiles').upsert(
+      { user_id: uid, current_stage: stage, language: lang, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    ),
+    'profiles'
+  );
+}
+
+/** Sube embarazos, controles y pataditas. Los terminados van primero (solo puede haber uno activo). */
+async function pushPregnancies(uid: string): Promise<number> {
+  const pregnancies = await getAllPregnancies();
+  if (!pregnancies.length) return 0;
+  const toRow = (p: (typeof pregnancies)[number]) => ({
+    user_id: uid,
+    lmp_date: p.lmp_date,
+    lmp_estimated: !!p.lmp_estimated,
+    status: p.status,
+    ended_on: p.ended_on,
+  });
+  const ended = pregnancies.filter((p) => p.status === 'ended').map(toRow);
+  const active = pregnancies.filter((p) => p.status === 'active').map(toRow);
+  const idByLmp = new Map<string, string>();
+  for (const batch of [ended, active]) {
+    if (!batch.length) continue;
+    const saved = check(
+      await supabase.from('pregnancies').upsert(batch, { onConflict: 'user_id,lmp_date' }).select('id, lmp_date'),
+      'pregnancies'
+    );
+    for (const r of saved as any[]) idByLmp.set(r.lmp_date, r.id);
+  }
+
+  const checkups = await getAllCheckupsWithLmp();
+  const rows = checkups.map((c) => ({
+    pregnancy_id: idByLmp.get(c.lmp_date),
+    local_uuid: c.local_uuid,
+    checkup_date: c.checkup_date,
+    kind: c.kind,
+    place: c.place,
+    weight_kg: c.weight_kg,
+    bp_systolic: c.bp_systolic,
+    bp_diastolic: c.bp_diastolic,
+    notes: c.notes,
+    done: !!c.done,
+  }));
+  if (rows.length) {
+    check(await supabase.from('prenatal_checkups').upsert(rows, { onConflict: 'pregnancy_id,local_uuid' }), 'prenatal_checkups');
+  }
+  // Controles borrados en el teléfono: se quitan también de la nube
+  for (const [lmp, id] of idByLmp) {
+    const keep = checkups.filter((c) => c.lmp_date === lmp).map((c) => c.local_uuid);
+    const del = supabase.from('prenatal_checkups').delete().eq('pregnancy_id', id);
+    check(keep.length ? await del.not('local_uuid', 'in', `(${keep.map((k) => `"${k}"`).join(',')})`) : await del, 'prenatal_checkups');
+  }
+
+  const kicks = (await getAllKicksWithLmp()).filter((k) => k.local_uuid);
+  if (kicks.length) {
+    check(
+      await supabase.from('kick_sessions').upsert(
+        kicks.map((k) => ({
+          pregnancy_id: idByLmp.get(k.lmp_date),
+          local_uuid: k.local_uuid,
+          session_date: k.session_date,
+          kick_count: k.kick_count,
+          duration_minutes: k.duration_minutes,
+        })),
+        { onConflict: 'pregnancy_id,local_uuid' }
+      ),
+      'kick_sessions'
+    );
+  }
+  return pregnancies.length;
+}
+
+async function restorePregnancies(uid: string): Promise<number> {
+  const remote = check(
+    await supabase
+      .from('pregnancies')
+      .select('*, prenatal_checkups(*), kick_sessions(*)')
+      .eq('user_id', uid),
+    'pregnancies'
+  ) as any[];
+  let restored = 0;
+  // Los terminados primero, para que el activo remoto no choque con uno local
+  for (const p of [...remote].sort((a, b) => (a.status === 'ended' ? -1 : 1) - (b.status === 'ended' ? -1 : 1))) {
+    const created = await importPregnancy(
+      { lmp_date: p.lmp_date, lmp_estimated: p.lmp_estimated, status: p.status, ended_on: p.ended_on },
+      (p.prenatal_checkups ?? []).map((c: any) => ({
+        local_uuid: c.local_uuid,
+        checkup_date: c.checkup_date,
+        kind: c.kind,
+        place: c.place,
+        weight_kg: c.weight_kg === null ? null : Number(c.weight_kg),
+        bp_systolic: c.bp_systolic,
+        bp_diastolic: c.bp_diastolic,
+        notes: c.notes,
+        done: c.done ? 1 : 0,
+      })),
+      (p.kick_sessions ?? []).map((k: any) => ({
+        local_uuid: k.local_uuid,
+        session_date: k.session_date,
+        kick_count: k.kick_count,
+        duration_minutes: k.duration_minutes,
+      }))
+    );
+    if (created) restored += 1;
+  }
+  return restored;
 }
 
 /** Sube los últimos 90 días de registros y los ciclos. Devuelve null si no hay sesión. */
@@ -99,7 +229,8 @@ export async function pushHealthBackup(): Promise<BackupResult | null> {
     );
   }
 
-  return { logs: logs.length, cycles: cycles.length };
+  const pregnancies = await pushPregnancies(uid);
+  return { logs: logs.length, cycles: cycles.length, pregnancies };
 }
 
 /** Trae a este teléfono lo respaldado que aún no existe localmente. No pisa datos locales. */
@@ -152,7 +283,15 @@ export async function restoreHealthBackup(): Promise<BackupResult | null> {
     restoredCycles += 1;
   }
 
-  return { logs: restoredLogs, cycles: restoredCycles };
+  const restoredPregnancies = await restorePregnancies(uid);
+  const profile = check(await supabase.from('profiles').select('current_stage').eq('user_id', uid).maybeSingle(), 'profiles');
+
+  return {
+    logs: restoredLogs,
+    cycles: restoredCycles,
+    pregnancies: restoredPregnancies,
+    stage: (profile as any)?.current_stage ?? undefined,
+  };
 }
 
 /** Borra todo el respaldo de la usuaria en la nube (las tablas hijas caen en cascada). */
@@ -161,4 +300,6 @@ export async function deleteHealthBackup(): Promise<void> {
   if (!uid) return;
   check(await supabase.from('daily_logs').delete().eq('user_id', uid), 'daily_logs');
   check(await supabase.from('cycles').delete().eq('user_id', uid), 'cycles');
+  // Embarazos: controles y pataditas caen en cascada
+  check(await supabase.from('pregnancies').delete().eq('user_id', uid), 'pregnancies');
 }

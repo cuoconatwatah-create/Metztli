@@ -16,8 +16,12 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Volume2, Download, BookOpen, ChevronRight, Send } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
+import i18n from 'i18next';
+import { getMythAudio } from '@/data/mythAudio';
+import { playMythAudio, stopMythAudio } from '@/lib/mythAudio';
 import { addForumPost, fallbackMyths, getLocalMyths } from '@/db/database';
-import { ARTICLES, ARTICLE_FILTERS, CATEGORY_LABELS, type ArticleCategory } from '@/data/learning';
+import { ARTICLES, ARTICLE_FILTERS, CATEGORY_LABELS, articleStages, type ArticleCategory } from '@/data/learning';
+import { useStage } from '@/context/StageContext';
 import type { Myth } from '@/types';
 import { Card, Chip, CurvedHeader, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
@@ -28,6 +32,8 @@ export const TONE_BG = { carmin: colors.carmin, bosque: colors.bosque, mauve: co
 export default function AprendizajeScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
+  const { stage } = useStage();
+  const [showAll, setShowAll] = useState(false);
   const [filter, setFilter] = useState<'todos' | ArticleCategory>('todos');
   const [myths, setMyths] = useState<Myth[]>(fallbackMyths);
   const [story, setStory] = useState('');
@@ -37,16 +43,28 @@ export default function AprendizajeScreen() {
     getLocalMyths().then((m) => m.length && setMyths(m));
   }, []);
 
-  // Un mito distinto por día.
+  // Un mito distinto por día, de la etapa activa
   const myth = useMemo(() => {
+    const category = stage === 'pregnancy' ? 'embarazo' : stage === 'menopause' ? 'menopausia' : 'ciclo';
+    const pool = myths.filter((m) => m.category === category);
+    const list = pool.length ? pool : myths;
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-    return myths[dayOfYear % myths.length];
-  }, [myths]);
+    return list[dayOfYear % list.length];
+  }, [myths, stage]);
 
-  const articles = ARTICLES.filter((a) => filter === 'todos' || a.category === filter);
+  const articles = ARTICLES.filter(
+    (a) => (filter === 'todos' || a.category === filter) && (showAll || articleStages(a).includes(stage))
+  );
 
+  // En Mískitu, si hay grabación comunitaria se reproduce el mito y luego la verdad; si no, voz sintética
   const speak = () => {
     Speech.stop();
+    const audio = i18n.language === 'miskitu' ? getMythAudio(myth.id, 'miskitu') : null;
+    if (audio) {
+      playMythAudio([audio.myth, audio.reality]).catch((e) => console.warn('No se pudo reproducir el audio', e));
+      return;
+    }
+    stopMythAudio();
     Speech.speak(`${myth.myth} ${myth.reality}`, { language: 'es-ES', rate: 0.9 });
   };
 
@@ -92,6 +110,12 @@ export default function AprendizajeScreen() {
               <Chip key={f.value} label={u(f.label)} active={filter === f.value} onPress={() => setFilter(f.value)} />
             ))}
           </ScrollView>
+
+          <TouchableOpacity onPress={() => setShowAll(!showAll)} accessibilityRole="button">
+            <Text style={styles.link}>
+              {showAll ? u('Mostrando todas las etapas · ver solo la mía') : u('Mostrando contenido de tu etapa · ver todo')}
+            </Text>
+          </TouchableOpacity>
 
           {articles.length === 0 ? (
             <Text style={styles.muted}>{u('Pronto habrá más contenido en esta categoría.')}</Text>

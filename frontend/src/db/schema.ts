@@ -15,7 +15,7 @@
 
 import type { DailyLog } from '@/types';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** Subconjunto de expo-sqlite que usamos (también lo cumple un adaptador de pruebas). */
 export interface SqlDb {

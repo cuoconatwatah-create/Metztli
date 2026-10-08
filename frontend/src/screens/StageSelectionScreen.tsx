@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Moon, Sun, Leaf } from 'lucide-react-native';
-import { updateUserMode } from '@/db/database';
+import { useStage } from '@/context/StageContext';
 import type { LifeStageMode } from '@/types';
 import { Button, BackLink, StepDots } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
@@ -21,6 +21,7 @@ const STAGES: { mode: LifeStageMode; title: string; desc: string; Icon: typeof M
 export default function StageSelectionScreen() {
   const u = useUi();
   const navigation = useNavigation<any>();
+  const { setStage } = useStage();
   const [selected, setSelected] = useState<LifeStageMode | null>(null);
 
   const handleContinue = async () => {
@@ -29,7 +30,7 @@ export default function StageSelectionScreen() {
       return;
     }
     try {
-      await updateUserMode(selected);
+      await setStage(selected);
     } catch (e) {
       // No bloqueamos el onboarding: la etapa se puede cambiar luego en Perfil.
       console.warn('No se pudo guardar la etapa', e);

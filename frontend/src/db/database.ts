@@ -14,6 +14,24 @@ import {
   renameLegacyDailyLogs,
   upsertDailyLog,
 } from './schema';
+import {
+  GESTATION_DAYS,
+  addCheckup,
+  addDays,
+  deleteCheckup,
+  dueDateFromLmp,
+  endActivePregnancy,
+  getActivePregnancy as selectActivePregnancy,
+  insertKickSession,
+  listCheckups,
+  localToday,
+  makeUuid,
+  migrateToV3,
+  resolveLmp,
+  savePregnancy,
+  updateCheckup,
+  type CheckupInput,
+} from './pregnancySchema';
 
 import type {
   UserProfile,
@@ -29,6 +47,8 @@ import type {
   ForumCategory,
   UserCycleLog,
   Myth,
+  Pregnancy,
+  PrenatalCheckup,
 } from '@/types';
 
 let db: any = null;
@@ -65,9 +85,7 @@ export async function initializeDatabase(): Promise<void> {
     -- Perfil y modo de etapa de vida activa
     CREATE TABLE IF NOT EXISTS user_profile (
       id INTEGER PRIMARY KEY CHECK (id = 1),
-      current_mode TEXT DEFAULT 'cycle',
-      lmp_date TEXT,
-      due_date TEXT
+      current_mode TEXT DEFAULT 'cycle'
     );
 
     -- Insertar perfil por defecto si no existe
@@ -145,6 +163,7 @@ export async function initializeDatabase(): Promise<void> {
     ('c2', 'ciclo', 'Si comes cosas ácidas como limón se te corta el periodo.', 'No hay alimentos que puedan detener tu flujo menstrual. Puedes mantener tu dieta habitual sin problemas.'),
     ('c3', 'ciclo', 'La sangre menstrual es sucia o tóxica.', 'La sangre menstrual es completamente natural, está compuesta de sangre, tejido del útero y agua. No es tóxica de ninguna manera.'),
     ('c4', 'ciclo', 'No puedes hacer ejercicio mientras estás menstruando.', 'El ejercicio leve o moderado puede incluso ayudar a reducir los cólicos menstruales al liberar endorfinas.'),
+    ('c5', 'ciclo', 'Las mujeres que están menstruando no deben cocinar ni preparar alimentos porque pueden dañarlos o hacer que se descompongan.', 'La menstruación es un proceso biológico natural del cuerpo femenino y no afecta la calidad de los alimentos ni la capacidad de una mujer para cocinar, trabajar, estudiar o participar en actividades comunitarias. No existe ninguna evidencia científica que demuestre que una mujer menstruando pueda dañar los alimentos o alterar su preparación. Estas creencias forman parte de mitos y tradiciones culturales transmitidas de generación en generación.'),
     ('e1', 'embarazo', 'Las agruras o acidez significan que el bebé nacerá con mucho cabello.', 'La acidez es causada por los cambios hormonales que relajan una válvula del estómago y por la presión que ejerce el bebé al crecer, no por su cabello.'),
     ('e2', 'embarazo', 'La forma de la panza (alta o baja, redonda o puntiaguda) indica el sexo del bebé.', 'La forma de la panza depende de la estructura física de la madre, el tono muscular y la posición del bebé, no de si es niño o niña.'),
     ('e3', 'embarazo', 'No debes tejer ni enrollar hilos, porque el cordón se le puede enredar al bebé.', 'El enredo del cordón ocurre por los movimientos del bebé dentro de la panza, ninguna actividad que hagas con tus manos puede causarlo.'),
@@ -158,6 +177,8 @@ export async function initializeDatabase(): Promise<void> {
   await database.execAsync(DAILY_LOG_SQL);
   await database.execAsync(SYMPTOM_SEED_SQL);
   await migrateLegacyDailyLogs(database);
+  // v3: embarazos, controles prenatales y pataditas ligadas al embarazo
+  await migrateToV3(database);
   await database.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
 }
 
@@ -165,37 +186,181 @@ export async function initializeDatabase(): Promise<void> {
 // USER PROFILE
 // ─────────────────────────────────────────────────────────
 
+// En web la base es un mock sin persistencia: se guarda en memoria.
+let webMode: LifeStageMode = 'cycle';
+let webPregnancy: Pregnancy | null = null;
+let webCheckups: PrenatalCheckup[] = [];
+let webSeq = 1;
+
 export async function getUserProfile(): Promise<UserProfile | null> {
   const database = await openDatabase();
-  const result = (await database.getFirstAsync(
-    'SELECT * FROM user_profile WHERE id = 1'
-  )) as UserProfile | undefined;
-  return result ?? null;
+  const row = Platform.OS === 'web'
+    ? { id: 1, current_mode: webMode }
+    : ((await database.getFirstAsync('SELECT id, current_mode FROM user_profile WHERE id = 1')) as { id: 1; current_mode: LifeStageMode } | null);
+  if (!row) return null;
+  const preg = await getActivePregnancy();
+  return {
+    id: 1,
+    current_mode: row.current_mode,
+    lmp_date: preg?.lmp_date ?? null,
+    due_date: preg ? dueDateFromLmp(preg.lmp_date) : null,
+  };
 }
 
 export async function updateUserMode(mode: LifeStageMode): Promise<void> {
+  webMode = mode;
   const database = await openDatabase();
-  await database.runAsync(
-    'UPDATE user_profile SET current_mode = ? WHERE id = 1',
-    [mode]
-  );
+  await database.runAsync('UPDATE user_profile SET current_mode = ? WHERE id = 1', [mode]);
+}
+
+// ─────────────────────────────────────────────────────────
+// PREGNANCY (embarazo activo, controles prenatales)
+// ─────────────────────────────────────────────────────────
+
+export async function getActivePregnancy(): Promise<Pregnancy | null> {
+  if (Platform.OS === 'web') return webPregnancy && webPregnancy.status === 'active' ? webPregnancy : null;
+  return selectActivePregnancy(await openDatabase());
+}
+
+/** Crea el embarazo activo o corrige su fecha (FUM o fecha probable de parto). */
+export async function savePregnancyDates(input: { lmp_date?: string; due_date?: string }): Promise<Pregnancy> {
+  if (Platform.OS === 'web') {
+    const { lmp, estimated } = resolveLmp(input, localToday());
+    webPregnancy = webPregnancy && webPregnancy.status === 'active'
+      ? { ...webPregnancy, lmp_date: lmp, lmp_estimated: estimated }
+      : { id: webSeq++, lmp_date: lmp, lmp_estimated: estimated, status: 'active', ended_on: null, created_at: new Date().toISOString() };
+    return webPregnancy;
+  }
+  return savePregnancy(await openDatabase(), input, localToday());
 }
 
 export async function updateLMPDate(lmpDate: string): Promise<void> {
-  const database = await openDatabase();
-  await database.runAsync(
-    'UPDATE user_profile SET lmp_date = ? WHERE id = 1',
-    [lmpDate]
-  );
+  await savePregnancyDates({ lmp_date: lmpDate });
 }
 
 export async function updateDueDate(dueDate: string): Promise<void> {
-  const database = await openDatabase();
-  await database.runAsync(
-    'UPDATE user_profile SET due_date = ? WHERE id = 1',
-    [dueDate]
-  );
+  await savePregnancyDates({ due_date: dueDate });
 }
+
+/** Termina el embarazo activo. Controles y pataditas se conservan como historial. */
+export async function endPregnancy(): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (webPregnancy) webPregnancy = { ...webPregnancy, status: 'ended', ended_on: localToday() };
+    return;
+  }
+  await endActivePregnancy(await openDatabase(), localToday());
+}
+
+export async function getPrenatalCheckups(): Promise<PrenatalCheckup[]> {
+  if (Platform.OS === 'web') {
+    return webPregnancy?.status === 'active'
+      ? [...webCheckups].sort((a, b) => (a.checkup_date < b.checkup_date ? -1 : 1))
+      : [];
+  }
+  return (await listCheckups(await openDatabase())) as PrenatalCheckup[];
+}
+
+export async function addPrenatalCheckup(input: CheckupInput): Promise<PrenatalCheckup> {
+  if (Platform.OS === 'web') {
+    if (!webPregnancy || webPregnancy.status !== 'active') throw new Error('No hay un embarazo activo');
+    const row: PrenatalCheckup = {
+      id: webSeq++,
+      local_uuid: makeUuid(),
+      pregnancy_id: webPregnancy.id,
+      checkup_date: input.checkup_date,
+      kind: input.kind ?? 'control',
+      place: input.place ?? null,
+      weight_kg: input.weight_kg ?? null,
+      bp_systolic: input.bp_systolic ?? null,
+      bp_diastolic: input.bp_diastolic ?? null,
+      notes: input.notes ?? null,
+      done: input.done ? 1 : 0,
+    };
+    webCheckups.push(row);
+    return row;
+  }
+  return (await addCheckup(await openDatabase(), input)) as PrenatalCheckup;
+}
+
+export async function updatePrenatalCheckup(id: number, patch: Partial<CheckupInput>): Promise<void> {
+  if (Platform.OS === 'web') {
+    webCheckups = webCheckups.map((c) => (c.id === id ? ({ ...c, ...patch, done: patch.done === undefined ? c.done : patch.done ? 1 : 0 } as PrenatalCheckup) : c));
+    return;
+  }
+  await updateCheckup(await openDatabase(), id, patch);
+}
+
+export async function removePrenatalCheckup(id: number): Promise<void> {
+  if (Platform.OS === 'web') {
+    webCheckups = webCheckups.filter((c) => c.id !== id);
+    return;
+  }
+  await deleteCheckup(await openDatabase(), id);
+}
+
+// ── Respaldo en la nube (db/cloud.ts): lectura completa e importación sin pisar datos locales ──
+
+export type CheckupWithLmp = PrenatalCheckup & { lmp_date: string };
+export type KickWithLmp = KickCounterLog & { lmp_date: string };
+
+export async function getAllPregnancies(): Promise<Pregnancy[]> {
+  if (Platform.OS === 'web') return webPregnancy ? [webPregnancy] : [];
+  return (await (await openDatabase()).getAllAsync('SELECT * FROM pregnancies ORDER BY lmp_date ASC')) as Pregnancy[];
+}
+
+export async function getAllCheckupsWithLmp(): Promise<CheckupWithLmp[]> {
+  if (Platform.OS === 'web') return webPregnancy ? webCheckups.map((c) => ({ ...c, lmp_date: webPregnancy!.lmp_date })) : [];
+  return (await (await openDatabase()).getAllAsync(
+    'SELECT c.*, p.lmp_date FROM prenatal_checkups c JOIN pregnancies p ON p.id = c.pregnancy_id ORDER BY c.checkup_date'
+  )) as CheckupWithLmp[];
+}
+
+export async function getAllKicksWithLmp(): Promise<KickWithLmp[]> {
+  if (Platform.OS === 'web') return [];
+  return (await (await openDatabase()).getAllAsync(
+    'SELECT k.*, p.lmp_date FROM kick_counter_logs k JOIN pregnancies p ON p.id = k.pregnancy_id ORDER BY k.session_date'
+  )) as KickWithLmp[];
+}
+
+/** Importa un embarazo con sus controles y pataditas si no existe aún (por FUM / local_uuid). */
+export async function importPregnancy(
+  p: { lmp_date: string; lmp_estimated: boolean; status: 'active' | 'ended'; ended_on: string | null },
+  checkups: Omit<PrenatalCheckup, 'id' | 'pregnancy_id'>[],
+  kicks: { local_uuid: string; session_date: string; kick_count: number; duration_minutes: number }[]
+): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+  const database = await openDatabase();
+  const existing = await database.getFirstAsync('SELECT id FROM pregnancies WHERE lmp_date = ?', [p.lmp_date]);
+  let id: number | undefined = existing?.id;
+  let created = false;
+  if (!id) {
+    // Nunca pisa el embarazo activo local: si ya hay uno, el importado entra como terminado
+    const active = await selectActivePregnancy(database);
+    const status = p.status === 'active' && active ? 'ended' : p.status;
+    await database.runAsync('INSERT INTO pregnancies (lmp_date, lmp_estimated, status, ended_on) VALUES (?, ?, ?, ?)', [
+      p.lmp_date, p.lmp_estimated ? 1 : 0, status, status === 'ended' ? p.ended_on : null,
+    ]);
+    id = (await database.getFirstAsync('SELECT id FROM pregnancies WHERE lmp_date = ?', [p.lmp_date])).id;
+    created = true;
+  }
+  for (const c of checkups) {
+    await database.runAsync(
+      `INSERT OR IGNORE INTO prenatal_checkups
+         (local_uuid, pregnancy_id, checkup_date, kind, place, weight_kg, bp_systolic, bp_diastolic, notes, done)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [c.local_uuid, id, c.checkup_date, c.kind, c.place, c.weight_kg, c.bp_systolic, c.bp_diastolic, c.notes, c.done ? 1 : 0]
+    );
+  }
+  for (const k of kicks) {
+    await database.runAsync(
+      'INSERT OR IGNORE INTO kick_counter_logs (local_uuid, pregnancy_id, session_date, kick_count, duration_minutes) VALUES (?, ?, ?, ?, ?)',
+      [k.local_uuid, id, k.session_date, k.kick_count, k.duration_minutes]
+    );
+  }
+  return created;
+}
+
+export { GESTATION_DAYS, addDays, dueDateFromLmp };
 
 // ─────────────────────────────────────────────────────────
 // CYCLES
@@ -274,10 +439,7 @@ export async function addKickSession(
     return;
   }
 
-  await database.runAsync(
-    'INSERT INTO kick_counter_logs (session_date, kick_count, duration_minutes) VALUES (?, ?, ?)',
-    [sessionDate, kickCount, durationMinutes]
-  );
+  await insertKickSession(database, sessionDate, kickCount, durationMinutes);
 }
 
 export async function getKickSessions(
@@ -574,6 +736,7 @@ export const fallbackMyths: Myth[] = [
   { id: 'c2', category: 'ciclo', myth: 'Si comes cosas ácidas como limón se te corta el periodo.', reality: 'No hay alimentos que puedan detener tu flujo menstrual. Puedes mantener tu dieta habitual sin problemas.' },
   { id: 'c3', category: 'ciclo', myth: 'La sangre menstrual es sucia o tóxica.', reality: 'La sangre menstrual es completamente natural, está compuesta de sangre, tejido del útero y agua. No es tóxica de ninguna manera.' },
   { id: 'c4', category: 'ciclo', myth: 'No puedes hacer ejercicio mientras estás menstruando.', reality: 'El ejercicio leve o moderado puede incluso ayudar a reducir los cólicos menstruales al liberar endorfinas.' },
+  { id: 'c5', category: 'ciclo', myth: 'Las mujeres que están menstruando no deben cocinar ni preparar alimentos porque pueden dañarlos o hacer que se descompongan.', reality: 'La menstruación es un proceso biológico natural del cuerpo femenino y no afecta la calidad de los alimentos ni la capacidad de una mujer para cocinar, trabajar, estudiar o participar en actividades comunitarias. No existe ninguna evidencia científica que demuestre que una mujer menstruando pueda dañar los alimentos o alterar su preparación. Estas creencias forman parte de mitos y tradiciones culturales transmitidas de generación en generación.' },
   { id: 'e1', category: 'embarazo', myth: 'Las agruras o acidez significan que el bebé nacerá con mucho cabello.', reality: 'La acidez es causada por los cambios hormonales que relajan una válvula del estómago y por la presión que ejerce el bebé al crecer, no por su cabello.' },
   { id: 'e2', category: 'embarazo', myth: 'La forma de la panza (alta o baja, redonda o puntiaguda) indica el sexo del bebé.', reality: 'La forma de la panza depende de la estructura física de la madre, el tono muscular y la posición del bebé, no de si es niño o niña.' },
   { id: 'e3', category: 'embarazo', myth: 'No debes tejer ni enrollar hilos, porque el cordón se le puede enredar al bebé.', reality: 'El enredo del cordón ocurre por los movimientos del bebé dentro de la panza, ninguna actividad que hagas con tus manos puede causarlo.' },
