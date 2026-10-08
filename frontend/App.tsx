@@ -23,6 +23,9 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 
+// Avisos visibles también en la web
+import '@/lib/webAlert';
+
 // i18n initialization
 import '@/i18n';
 
