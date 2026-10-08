@@ -6,14 +6,22 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const envPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'frontend', '.env');
+let envText = '';
+try {
+  envText = readFileSync(envPath, 'utf8');
+} catch {
+  // Sin frontend/.env se usan solo las variables de entorno
+}
 const env = Object.fromEntries(
-  readFileSync(envPath, 'utf8')
+  envText
     .split(/\r?\n/)
     .filter((l) => l.includes('=') && !l.startsWith('#'))
     .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).trim()])
 );
-const url = env.EXPO_PUBLIC_SUPABASE_URL;
-const key = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+// Las variables de entorno tienen prioridad: sirve para probar otro servidor sin tocar frontend/.env
+//   EXPO_PUBLIC_SUPABASE_URL=https://... EXPO_PUBLIC_SUPABASE_ANON_KEY=... node scripts/check-supabase.mjs
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL || env.EXPO_PUBLIC_SUPABASE_URL;
+const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 if (!url || !key) {
   console.error('Faltan EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY en frontend/.env');
   process.exit(1);

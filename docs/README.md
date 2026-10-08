@@ -14,6 +14,7 @@ Centro de documentación del proyecto **Metztli**. Cada entregable del reto tien
 | **6** | **Ejecución y demostración** | [DESPLIEGUE_Y_PRESENTACION.md](DESPLIEGUE_Y_PRESENTACION.md) | Dónde desplegar, ejecución local sin errores y guion del video de navegación |
 
 ### Documentos complementarios
+- ☁️ [Despliegue en Azure](AZURE_DESPLIEGUE.md): servidor propio con Supabase, red y puertos, y conexión de la app (entregables de Desarrollo).
 - 🎯 [Funcionalidades del Reto](FUNCIONALIDADES_DEL_RETO.md): cómo la app responde a la problemática de la Costa Caribe.
 - 📱 [Guía de Usuario Rápida](GUIA_DE_USUARIO_RAPIDA.md): uso paso a paso de cada etapa.
 - ⚙️ [Backend (Supabase)](../backend/README.md): migraciones, sincronización y verificación.

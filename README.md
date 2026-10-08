@@ -196,7 +196,7 @@ npx expo start -c        # móvil con Expo Go (escanea el QR)
 - **Automático:** el workflow *Build Android APK* genera el APK en cada push a `main` (pestaña **Actions → Artifacts**) y, al crear una etiqueta `v*`, lo publica en **Releases**.
 - **Local:** `npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease`
 
-Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md).
+Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md). Servidor propio en Azure: [Despliegue en Azure](docs/AZURE_DESPLIEGUE.md).
 
 ---
 
