@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { HeartHandshake, Moon, Droplet, Coffee, BellRing, Settings } from 'lucide-react-native';
+import { HeartHandshake, Moon, Droplet, Coffee, BellRing, LogOut } from 'lucide-react-native';
 import { Card, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
 import { useUi } from '@/i18n/ui';
@@ -70,8 +70,14 @@ export default function PartnerMainScreen() {
             <Text style={styles.title}>{u('Bienvenido/a a la red de apoyo')}</Text>
             <Text style={styles.muted}>{u('Estás acompañando a Ana')}</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Welcome')} accessibilityLabel={u('Salir de la vista de acompañante')} accessibilityRole="button">
-            <Settings size={22} color={colors.carmin} />
+          <TouchableOpacity
+            style={styles.exit}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] })}
+            accessibilityLabel={u('Salir de la vista de acompañante')}
+            accessibilityRole="button"
+          >
+            <LogOut size={16} color={colors.carmin} />
+            <Text style={styles.exitText}>{u('Salir')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -114,6 +120,18 @@ export default function PartnerMainScreen() {
 }
 
 const styles = StyleSheet.create({
+  exit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+  },
+  exitText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.carmin },
   safeArea: { flex: 1, backgroundColor: colors.avena },
   scroll: { padding: 20, gap: 16, paddingBottom: 40 },
   top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },

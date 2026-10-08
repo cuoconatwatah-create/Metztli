@@ -47,10 +47,10 @@ flowchart LR
    - APK: pestaña **Actions → Build Android APK → Artifacts → `Metztli-App-APK`**.
 5. **APK con enlace fijo**: crea una etiqueta y súbela.
    ```bash
-   git tag v2.0.6
-   git push origin v2.0.6
+   git tag v2.0.7
+   git push origin v2.0.7
    ```
-   El workflow publica un **Release** con `Metztli-2.0.6.apk` para descargarlo desde el teléfono.
+   El workflow publica un **Release** con `Metztli-2.0.7.apk` para descargarlo desde el teléfono.
 
 > El APK de CI se firma con la clave de depuración que genera `expo prebuild`. Es instalable para demostración; para publicarlo en Google Play habría que firmarlo con una clave propia.
 
