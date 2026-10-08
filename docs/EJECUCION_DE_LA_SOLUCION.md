@@ -58,7 +58,7 @@ cp .env.example .env
 
 Verifica el contenido de `frontend/.env`:
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://ftcxvgxkkcfqucligesy.supabase.co
+EXPO_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_AQUI_VA_EL_RESTO_DE_TU_CLAVE
 ```
 

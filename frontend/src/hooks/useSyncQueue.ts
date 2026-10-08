@@ -4,32 +4,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { getUnsyncedPosts, markPostAsSynced } from '@/db/database';
-import type { ForumPost } from '@/types';
+import { getUnsyncedPosts } from '@/db/database';
+import { syncForum } from '@/db/sync';
 
 interface SyncQueueState {
   isConnected: boolean;
   isSyncing: boolean;
   pendingCount: number;
   lastSyncAt: string | null;
-}
-
-/**
- * Simulates sending a post to the server.
- * In production, replace with actual API call.
- */
-async function sendPostToServer(post: ForumPost): Promise<boolean> {
-  // TODO: Replace with actual API endpoint
-  // const response = await fetch('https://api.metztli.app/forum/posts', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(post),
-  // });
-  // return response.ok;
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return true;
 }
 
 export function useSyncQueue() {
@@ -63,19 +45,8 @@ export function useSyncQueue() {
     setState((prev) => ({ ...prev, isSyncing: true }));
 
     try {
-      const unsyncedPosts = await getUnsyncedPosts();
-
-      for (const post of unsyncedPosts) {
-        try {
-          const success = await sendPostToServer(post);
-          if (success) {
-            await markPostAsSynced(post.local_uuid);
-          }
-        } catch {
-          // If a single post fails, continue with the rest
-          console.warn(`Failed to sync post: ${post.local_uuid}`);
-        }
-      }
+      // Sube lo pendiente y baja lo nuevo de la comunidad (Supabase)
+      await syncForum();
 
       setState((prev) => ({
         ...prev,
