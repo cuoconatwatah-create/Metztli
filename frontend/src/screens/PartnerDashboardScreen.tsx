@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Users, CheckCircle2 } from 'lucide-react-native';
 
@@ -23,7 +23,7 @@ export default function PartnerDashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         
         <View style={styles.iconContainer}>
           <Users size={64} color="#8B2635" />
@@ -68,7 +68,7 @@ export default function PartnerDashboardScreen() {
           </View>
         )}
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F1EA',
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 24,
     justifyContent: 'center',
     alignItems: 'center',
