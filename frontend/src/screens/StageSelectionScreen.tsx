@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Moon, Sun, Leaf } from 'lucide-react-native';
 import { useStage } from '@/context/StageContext';
@@ -40,7 +40,7 @@ export default function StageSelectionScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <BackLink onPress={() => navigation.goBack()} />
 
         <View style={{ gap: 6 }}>
@@ -75,14 +75,14 @@ export default function StageSelectionScreen() {
         <View style={{ flex: 1 }} />
         <StepDots total={5} active={1} />
         <Button label={u('COMENZAR (Usuaria)')} onPress={handleContinue} disabled={!selected} />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.avena },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 24 },
+  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 24 },
   eyebrow: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1.2, color: colors.mutedSoft },
   title: { fontFamily: fonts.display, fontSize: 26, color: colors.carmin },
   options: { gap: 14 },

@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Share, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Share2, Copy } from 'lucide-react-native';
 import { Button, BackLink, StepDots } from '@/components/ui';
@@ -31,7 +31,7 @@ export default function TribuCodeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <BackLink onPress={() => navigation.goBack()} />
 
         <Text style={styles.title}>
@@ -64,14 +64,14 @@ export default function TribuCodeScreen() {
         <TouchableOpacity style={styles.skip} onPress={goToApp} accessibilityRole="button">
           <Text style={styles.skipText}>{u('SALTAR ESTE PASO POR AHORA')}</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.avena },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 },
+  container: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 },
   title: { fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.carbon },
   codeCard: {
     backgroundColor: colors.bosque,

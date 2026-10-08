@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import GlassCard from '@/components/GlassCard';
@@ -46,7 +46,7 @@ export default function LanguageSelectionScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           {/* Logo Placeholder */}
           <View style={styles.logoPlaceholder}>
@@ -86,7 +86,7 @@ export default function LanguageSelectionScreen({ navigation }: Props) {
             <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
           </TouchableOpacity>
         </GlassCard>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F1EA',
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 24,
     justifyContent: 'center',
   },
