@@ -144,6 +144,7 @@ export default function AuthScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               autoComplete="email"
+              returnKeyType="next"
             />
             {errorField === 'contact' && (
               <Text style={styles.errorText}>{u('Escribe un correo válido, por ejemplo nombre@correo.com.')}</Text>
@@ -155,6 +156,9 @@ export default function AuthScreen() {
               value={password}
               onChangeText={(v) => { setPassword(v); setErrorField(''); }}
               secureTextEntry
+              autoCapitalize="none"
+              returnKeyType="go"
+              onSubmitEditing={handleAuth}
             />
             {errorField === 'password' && (
               <Text style={styles.errorText}>{u('La contraseña debe tener al menos {{n}} caracteres.', { n: MIN_PASSWORD })}</Text>
@@ -171,7 +175,7 @@ export default function AuthScreen() {
             </View>
           )}
 
-          <View style={{ flex: 1 }} />
+          {!isLogin && <View style={{ flex: 1 }} />}
 
           {!isLogin && <StepDots total={5} active={2} />}
 

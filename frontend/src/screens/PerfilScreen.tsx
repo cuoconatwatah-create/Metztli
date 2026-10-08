@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Share, Alert, Switch } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { ShieldCheck, ClipboardCheck, Users, PhoneCall, Baby, CalendarDays, HeartHandshake, LogOut, Share2, ChevronRight } from 'lucide-react-native';
+import { ShieldCheck, ClipboardCheck, Users, PhoneCall, Baby, CalendarDays, HeartHandshake, LogOut, LogIn, Share2, ChevronRight } from 'lucide-react-native';
 import { getDailyLogs } from '@/db/database';
 import { supabase } from '@/lib/supabase';
 import { isCloudBackupEnabled, setCloudBackupEnabled } from '@/lib/prefs';
@@ -125,7 +125,14 @@ export default function PerfilScreen() {
     if (enable) {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        Alert.alert(u('Inicia sesión para respaldar'), u('Necesitas una cuenta para guardar un respaldo. Inicia sesión y vuelve a activarlo.'));
+        Alert.alert(
+          u('Inicia sesión para respaldar'),
+          u('Necesitas una cuenta para guardar un respaldo. Inicia sesión y vuelve a activarlo.'),
+          [
+            { text: u('Cancelar'), style: 'cancel' },
+            { text: u('Iniciar sesión'), onPress: () => navigation.navigate('Auth', { mode: 'login' }) },
+          ],
+        );
         return;
       }
       setBackupBusy(true);
@@ -284,10 +291,21 @@ export default function PerfilScreen() {
             <LanguageSwitcher />
           </View>
 
-          <TouchableOpacity style={styles.logout} onPress={logout} accessibilityRole="button">
-            <LogOut size={16} color={colors.carmin} />
-            <Text style={styles.logoutText}>{u('Cerrar sesión')}</Text>
-          </TouchableOpacity>
+          {signedIn ? (
+            <TouchableOpacity style={styles.logout} onPress={logout} accessibilityRole="button">
+              <LogOut size={16} color={colors.carmin} />
+              <Text style={styles.logoutText}>{u('Cerrar sesión')}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.logout}
+              onPress={() => navigation.navigate('Auth', { mode: 'login' })}
+              accessibilityRole="button"
+            >
+              <LogIn size={16} color={colors.carmin} />
+              <Text style={styles.logoutText}>{u('Iniciar sesión')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
