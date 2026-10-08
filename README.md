@@ -97,13 +97,6 @@ Metztli tiene tres perfiles de acceso. Cada uno solo ve y hace lo que necesita:
 
 **Privacidad ante todo**: los datos de salud de cada persona son solo suyos. Ni la administración ni la auditoría pueden verlos, y las acciones del personal quedan registradas en un historial que no se puede modificar. El detalle técnico y las pruebas están en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
 
---- | :--- | :--- |
-| **Usuaria** (por defecto) | Usar todas las etapas, respaldar *sus* datos, publicar en el foro | Ver datos de otras, cambiar roles, ver la bitácora |
-| **Administradora** | Asignar roles, moderar el foro, gestionar mitos y directorio | Leer ciclos, embarazos o registros de nadie |
-| **Auditora** | Ver la bitácora de acciones y estadísticas agregadas (solo lectura) | Modificar algo; leer datos de salud |
-
-Cada acción del personal queda en una **bitácora inmutable** (`audit_log`). Detalle y pruebas en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
-
 ---
 
 ## 🏗️ Arquitectura
