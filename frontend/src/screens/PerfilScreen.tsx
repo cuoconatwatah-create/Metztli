@@ -264,6 +264,7 @@ export default function PerfilScreen() {
               <Row icon={<ClipboardCheck size={18} color={colors.carmin} />} label={u('Panel de auditoría')} onPress={() => navigation.navigate('AuditPanel')} />
             )}
             <Row icon={<PhoneCall size={18} color={colors.carmin} />} label={u('Directorio de emergencias')} onPress={() => navigation.navigate('Directorio')} />
+            <Row icon={<ShieldCheck size={18} color={colors.carmin} />} label={u('Política de privacidad')} onPress={() => navigation.navigate('Privacy')} />
             <Row icon={<CalendarDays size={18} color={colors.carmin} />} label={u('Calendario completo')} onPress={() => navigation.navigate('BrujulaLunar')} />
             {mode === 'pregnancy' && (
               <Row icon={<Baby size={18} color={colors.carmin} />} label={u('Triage y auxilio por SMS')} onPress={() => navigation.navigate('Embarazo')} />

@@ -8,7 +8,7 @@
 ## 1. Primeros pasos
 
 1. **Bienvenida**: toca **COMENZAR (Usuario)**. Si ya tienes cuenta, **Iniciar sesión**. Si eres pareja o familiar, toca **ACOMPAÑANTE**.
-2. **Crear tu perfil**: escribe tu nombre, tu **correo electrónico** y una contraseña de al menos 8 caracteres. Puedes usar la app **sin cuenta** (todo queda en tu teléfono). Si creas cuenta, confirma tu correo para poder iniciar sesión después.
+2. **Crear tu perfil**: escribe tu nombre, tu **correo electrónico** y una contraseña de al menos 8 caracteres, y **marca la casilla de la Política de Privacidad** (puedes leerla tocando su nombre). Sin aceptarla no se crea la cuenta. Puedes usar la app **sin cuenta** (todo queda en tu teléfono). Si creas cuenta, confirma tu correo para poder iniciar sesión después.
 3. **Elegir tu etapa**: 🩸 Menstruación · 🤰 Embarazo · 🌿 Menopausia.
 4. **Código de acompañante**: compártelo con quien quieras que te acompañe, o salta este paso.
 

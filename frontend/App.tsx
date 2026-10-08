@@ -61,6 +61,7 @@ import DesmitificadorScreen from '@/screens/DesmitificadorScreen';
 import PartnerMainScreen from '@/screens/PartnerMainScreen';
 import AdminPanelScreen from '@/screens/AdminPanelScreen';
 import AuditPanelScreen from '@/screens/AuditPanelScreen';
+import PrivacyScreen from '@/screens/PrivacyScreen';
 import PregnancyTimelineScreen from '@/screens/PregnancyTimelineScreen';
 import KickCounterScreen from '@/screens/KickCounterScreen';
 import ObstetricAlarmScreen from '@/screens/ObstetricAlarmScreen';
@@ -187,6 +188,7 @@ export default function App() {
         <Stack.Screen name="PartnerMain" component={PartnerMainScreen} />
         <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
         <Stack.Screen name="AuditPanel" component={AuditPanelScreen} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} />
         <Stack.Screen name="PregnancyTimeline" component={PregnancyTimelineScreen} />
         <Stack.Screen name="KickCounter" component={KickCounterScreen} />
         <Stack.Screen name="ObstetricAlarm" component={ObstetricAlarmScreen} />

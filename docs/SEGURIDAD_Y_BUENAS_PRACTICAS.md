@@ -190,6 +190,7 @@ En Supabase, el cliente usa PostgREST (consultas parametrizadas) y las funciones
 
 - [x] **Privacy by Design**: datos de salud en local; respaldo opcional y borrable.
 - [x] **3 roles funcionales** (Administrador, Usuario, Auditor) aplicados con RLS y funciones en la base.
+- [x] **Consentimiento informado**: para crear una cuenta hay que aceptar la Política de Privacidad (`frontend/src/data/privacy.ts`); la fecha y la versión aceptadas se guardan en los metadatos de la cuenta.
 - [x] **Mínimo privilegio**: ningún rol lee datos de salud ajenos; el auditor es solo lectura.
 - [x] **Bitácora de auditoría inmutable** de las acciones del personal.
 - [x] **RLS activo en todas las tablas** y probado con sesiones simuladas de cada rol.
