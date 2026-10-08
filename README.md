@@ -87,10 +87,17 @@ flowchart TD
 
 ## 👥 Roles y seguridad
 
-Tres roles funcionales, **aplicados en la base de datos** (políticas RLS y funciones), no solo en la interfaz:
+Metztli tiene tres perfiles de acceso. Cada uno solo ve y hace lo que necesita:
 
-| Rol | Puede | No puede |
-| :--- | :--- | :--- |
+| Perfil | Para qué sirve |
+| :--- | :--- |
+| **Usuaria** (Usuario) | Es el perfil de todas las personas que usan la app: registrar su etapa, aprender, participar en el foro y, si quieren, respaldar sus propios datos. |
+| **Administradora** (Admin) | Cuida el contenido de la plataforma: gestiona las cuentas y sus perfiles, modera el foro y mantiene los mitos y el directorio. |
+| **Auditora** (Auditor) | Revisa que todo funcione con transparencia: consulta estadísticas generales y el historial de acciones, solo para lectura. |
+
+**Privacidad ante todo**: los datos de salud de cada persona son solo suyos. Ni la administración ni la auditoría pueden verlos, y las acciones del personal quedan registradas en un historial que no se puede modificar. El detalle técnico y las pruebas están en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
+
+--- | :--- | :--- |
 | **Usuaria** (por defecto) | Usar todas las etapas, respaldar *sus* datos, publicar en el foro | Ver datos de otras, cambiar roles, ver la bitácora |
 | **Administradora** | Asignar roles, moderar el foro, gestionar mitos y directorio | Leer ciclos, embarazos o registros de nadie |
 | **Auditora** | Ver la bitácora de acciones y estadísticas agregadas (solo lectura) | Modificar algo; leer datos de salud |
