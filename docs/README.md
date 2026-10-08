@@ -10,7 +10,7 @@ Centro de documentación del proyecto **Metztli**. Cada entregable del reto tien
 | **2** | **Diagramación de BD (hasta 2FN)** | [DIAGRAMA_BASE_DATOS.md](DIAGRAMA_BASE_DATOS.md) | Modelo ER en Mermaid, diccionario de datos y normalización (1FN y 2FN) |
 | **3** | **Interfaces y desarrollo al 100 %** | [INTERFAZ_Y_DESARROLLO.md](INTERFAZ_Y_DESARROLLO.md) | Sistema de diseño, navegación por etapas, catálogo de pantallas y formularios |
 | **4** | **Control de versiones al 100 %** | [CONTROL_DE_VERSIONES.md](CONTROL_DE_VERSIONES.md) | Flujo de ramas, Conventional Commits, comandos commit/push/pull y CI/CD |
-| **5** | **Seguridad y roles al 100 %** | [SEGURIDAD_Y_BUENAS_PRACTICAS.md](SEGURIDAD_Y_BUENAS_PRACTICAS.md) | Buenas prácticas y los 3 roles (Administradora, Usuaria, Auditora) con pruebas |
+| **5** | **Seguridad y roles al 100 %** | [SEGURIDAD_Y_BUENAS_PRACTICAS.md](SEGURIDAD_Y_BUENAS_PRACTICAS.md) | Buenas prácticas y los 3 roles (Administrador, Usuario, Auditor) con pruebas |
 | **6** | **Ejecución y demostración** | [DESPLIEGUE_Y_PRESENTACION.md](DESPLIEGUE_Y_PRESENTACION.md) | Dónde desplegar, ejecución local sin errores y guion del video de navegación |
 
 ### Documentos complementarios

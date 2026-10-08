@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────
-// Metztli — Rol de la cuenta (Administradora, Usuaria o Auditora)
+// Metztli — Rol de la cuenta (Administrador, Usuario o Auditor)
 //
 // Sin sesión (uso local) el rol es "user". Con sesión se lee de Supabase y se
 // guarda una copia en el dispositivo solo para mostrar la interfaz sin conexión;
@@ -13,7 +13,7 @@ import { getRolePref, setRolePref } from '@/lib/prefs';
 
 interface RoleContextValue {
   role: AppRole;
-  /** Administradora o auditora: pueden abrir paneles de personal. */
+  /** Administrador o auditor: pueden abrir paneles de personal. */
   isStaff: boolean;
   signedIn: boolean;
   refresh: () => Promise<void>;

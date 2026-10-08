@@ -282,10 +282,10 @@ Cada etapa (menstruación, embarazo, menopausia) tiene sus propias pantallas (`f
 
 | Tabla | Clave | Detalle y normalización |
 | :--- | :--- | :--- |
-| `user_roles` | `user_id` (1:1 con `auth.users`) | `role` con `CHECK IN ('admin','user','auditor')`. Tabla aparte (no una columna de `profiles`) para que una usuaria no pueda cambiarse el rol con su propia política de perfil. Solo se escribe con `set_user_role()`. |
+| `user_roles` | `user_id` (1:1 con `auth.users`) | `role` con `CHECK IN ('admin','user','auditor')`. Tabla aparte (no una columna de `profiles`) para que un usuario no pueda cambiarse el rol con su propia política de perfil. Solo se escribe con `set_user_role()`. |
 | `audit_log` | `id` (BIGSERIAL) | Bitácora de solo escritura: un *trigger* rechaza `UPDATE`/`DELETE`. `actor_id` no es FK para que borrar una cuenta no altere la bitácora. `details` guarda un resumen sin datos personales. |
 
-Ambas cumplen 2FN (clave simple; ningún atributo depende de media clave). Permisos por rol en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md#5-roles-y-permisos-administradora--usuaria--auditora).
+Ambas cumplen 2FN (clave simple; ningún atributo depende de media clave). Permisos por rol en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md#5-roles-y-permisos-administrador--usuario--auditor).
 
 ---
 

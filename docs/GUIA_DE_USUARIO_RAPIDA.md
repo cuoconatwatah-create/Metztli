@@ -7,7 +7,7 @@
 
 ## 1. Primeros pasos
 
-1. **Bienvenida**: toca **COMENZAR (Usuaria)**. Si ya tienes cuenta, **Iniciar sesión**. Si eres pareja o familiar, toca **ACOMPAÑANTE**.
+1. **Bienvenida**: toca **COMENZAR (Usuario)**. Si ya tienes cuenta, **Iniciar sesión**. Si eres pareja o familiar, toca **ACOMPAÑANTE**.
 2. **Crear tu perfil**: escribe tu nombre, tu **correo electrónico** y una contraseña de al menos 8 caracteres. Puedes usar la app **sin cuenta** (todo queda en tu teléfono). Si creas cuenta, confirma tu correo para poder iniciar sesión después.
 3. **Elegir tu etapa**: 🩸 Menstruación · 🤰 Embarazo · 🌿 Menopausia.
 4. **Código de acompañante**: compártelo con quien quieras que te acompañe, o salta este paso.
@@ -71,10 +71,10 @@ Disponible en todas las etapas. Indica tu **vitalidad**, tu **incomodidad**, el 
 
 ## 9. Roles (para el personal)
 
-Quien tenga una cuenta de **Administradora** o **Auditora** verá en **Perfil** el rol y su panel:
+Quien tenga una cuenta de **Administrador** o **Auditor** verá en **Perfil** el rol y su panel:
 
-- **Administradora → Panel de administración**: cambiar roles de las cuentas, eliminar publicaciones del foro y agregar o quitar mitos.
-- **Administradora o Auditora → Panel de auditoría**: estadísticas generales y la bitácora de acciones del personal (solo lectura).
+- **Administrador → Panel de administración**: cambiar roles de las cuentas, eliminar publicaciones del foro y agregar o quitar mitos.
+- **Administrador o Auditor → Panel de auditoría**: estadísticas generales y la bitácora de acciones del personal (solo lectura).
 
 Por privacidad, **ningún panel muestra datos de salud de nadie**.
 

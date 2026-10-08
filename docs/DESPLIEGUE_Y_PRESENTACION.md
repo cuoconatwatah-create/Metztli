@@ -47,10 +47,10 @@ flowchart LR
    - APK: pestaña **Actions → Build Android APK → Artifacts → `Metztli-App-APK`**.
 5. **APK con enlace fijo**: crea una etiqueta y súbela.
    ```bash
-   git tag v2.0.4
-   git push origin v2.0.4
+   git tag v2.0.5
+   git push origin v2.0.5
    ```
-   El workflow publica un **Release** con `Metztli-2.0.4.apk` para descargarlo desde el teléfono.
+   El workflow publica un **Release** con `Metztli-2.0.5.apk` para descargarlo desde el teléfono.
 
 > El APK de CI se firma con la clave de depuración que genera `expo prebuild`. Es instalable para demostración; para publicarlo en Google Play habría que firmarlo con una clave propia.
 
@@ -75,12 +75,12 @@ Si Metro falla por caché: `npx expo start -c`. Si cambias `metro.config.js`, re
 
 Para mostrar los tres roles se necesitan tres cuentas reales (el proyecto exige confirmar el correo):
 
-1. En la app: **COMENZAR → Crear perfil** con tres correos (usuaria, administradora, auditora). Confirma cada correo.
+1. En la app: **COMENZAR → Crear perfil** con tres correos (usuario, administrador, auditor). Confirma cada correo.
 2. Asigna roles ejecutando [`backend/supabase/seed_roles_demo.sql`](../backend/supabase/seed_roles_demo.sql) en el SQL Editor (con tus correos).
 3. Entra con cada cuenta (**Iniciar sesión**) y abre **Perfil**:
-   - *Usuaria*: sin paneles.
-   - *Administradora*: **Panel de administración** (cuentas y roles, foro, mitos) y **Panel de auditoría**.
-   - *Auditora*: **Panel de auditoría** (solo lectura).
+   - *Usuario*: sin paneles.
+   - *Administrador*: **Panel de administración** (cuentas y roles, foro, mitos) y **Panel de auditoría**.
+   - *Auditor*: **Panel de auditoría** (solo lectura).
 
 ---
 
@@ -97,7 +97,7 @@ Graba la pantalla del teléfono (o de la web) con la voz explicando. Datos de pr
 | 2:45 | **Señales de alarma / Triage** y botón de auxilio por SMS | "Pensado para zonas sin cobertura." |
 | 3:15 | **Aprendizaje → Desmitificador** → mito nuevo → **escuchar en Miskitu** (mito y verdad) | "Audios grabados por la comunidad." |
 | 3:45 | **Modo avión**: registrar algo y publicar en el foro; quitar el modo avión y mostrar la sincronización | "Funciona sin internet y sincroniza después." |
-| 4:15 | **Roles**: cerrar sesión → entrar como **Administradora** (cambiar un rol, borrar una publicación) → **Auditora** (bitácora con esas acciones) | "Tres roles aplicados en la base de datos; ni la administradora ve datos de salud." |
+| 4:15 | **Roles**: cerrar sesión → entrar como **Administrador** (cambiar un rol, borrar una publicación) → **Auditor** (bitácora con esas acciones) | "Tres roles aplicados en la base de datos; ni el administrador ve datos de salud." |
 | 4:50 | Repositorio en GitHub: commits, Actions en verde | "Todo versionado y desplegado automáticamente." |
 
 **Lista de verificación antes de grabar**

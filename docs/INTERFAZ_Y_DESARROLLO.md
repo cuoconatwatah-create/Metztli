@@ -107,11 +107,11 @@ El selector de etapa (botón bajo el título de cada inicio, y en Perfil) cambia
 17. **`PartnerDashboardScreen`** y **`PartnerMainScreen`**: vista del acompañante.
 
 **Por rol**
-18. **`AdminPanelScreen`** (Administradora): cuentas y roles, moderación del foro, gestión de mitos.
-19. **`AuditPanelScreen`** (Auditora): estadísticas agregadas y bitácora de solo lectura. Detalle en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md).
+18. **`AdminPanelScreen`** (Administrador): cuentas y roles, moderación del foro, gestión de mitos.
+19. **`AuditPanelScreen`** (Auditor): estadísticas agregadas y bitácora de solo lectura. Detalle en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md).
 
 ### Formularios funcionales
-Perfil (validación), registrar período, registrar día, ¿Cómo habitas tu día?, fecha del embarazo, nuevo control prenatal (con validación de rangos), publicación en el foro, historia anónima, agregar mito (administradora).
+Perfil (validación), registrar período, registrar día, ¿Cómo habitas tu día?, fecha del embarazo, nuevo control prenatal (con validación de rangos), publicación en el foro, historia anónima, agregar mito (administrador).
 
 ---
 

@@ -805,7 +805,7 @@ export async function syncMythsFromSupabase(): Promise<void> {
           [myth.id, myth.category, myth.myth, myth.reality]
         );
       }
-      // La nube es la fuente de verdad: un mito eliminado por la administradora sale también de aquí
+      // La nube es la fuente de verdad: un mito eliminado por el administrador sale también de aquí
       const ids = remoteMyths.map((m: any) => m.id as string);
       await database.runAsync(`DELETE FROM myths WHERE id NOT IN (${ids.map(() => '?').join(', ')})`, ids);
     }

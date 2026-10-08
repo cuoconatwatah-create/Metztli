@@ -179,7 +179,7 @@ export default function AuthScreen() {
             <ActivityIndicator size="large" color={colors.carmin} />
           ) : (
             <View style={{ gap: 12 }}>
-              <Button label={isLogin ? u('INICIAR SESIÓN') : u('COMENZAR (Usuaria)')} onPress={handleAuth} />
+              <Button label={isLogin ? u('INICIAR SESIÓN') : u('COMENZAR (Usuario)')} onPress={handleAuth} />
               <TouchableOpacity style={styles.link} onPress={toggleAuthMode} accessibilityRole="button">
                 <Text style={styles.linkText}>
                   {isLogin ? u('¿No tienes cuenta? Regístrate') : u('¿Ya tienes cuenta? Inicia sesión')}

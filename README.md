@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.4-8B2635?style=for-the-badge)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.5-8B2635?style=for-the-badge)
 ![React Native](https://img.shields.io/badge/React_Native-0.74-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Expo SDK](https://img.shields.io/badge/Expo_SDK-51.0-000020?style=for-the-badge&logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -20,7 +20,7 @@
 
 1. **Offline-First**: funciona completa sin internet con una base **SQLite** en el teléfono; sincroniza con **Supabase** cuando hay red.
 2. **Trilingüe**: **Español**, **Miskitu** y **Creole (Kriol)**, con cambio inmediato y audios comunitarios en Miskitu.
-3. **Privacidad por diseño**: los datos íntimos viven en el teléfono. El respaldo en la nube es **opcional** (apagado por defecto) y ni siquiera las administradoras pueden leer datos de salud de otras personas.
+3. **Privacidad por diseño**: los datos íntimos viven en el teléfono. El respaldo en la nube es **opcional** (apagado por defecto) y ni siquiera los administradores pueden leer datos de salud de otras personas.
 
 ---
 
@@ -32,7 +32,7 @@
 | **Comunidades miskitu y creole**, y personas con poca alfabetización | Usan la app en su idioma y con audio (lectura por voz y audios comunitarios en Miskitu) |
 | **Parejas y familiares** (modo acompañante) | Reciben consejos para apoyar a la persona, con su permiso y un código de vinculación |
 | **Promotoras de salud y parteras** | La usan como apoyo educativo y para orientar sobre señales de alarma y auxilio por SMS |
-| **Personal de la plataforma** (Administradora y Auditora) | Moderan contenido y supervisan, **sin acceso a datos de salud** de nadie |
+| **Personal de la plataforma** (Administradores y Auditores) | Moderan contenido y supervisan, **sin acceso a datos de salud** de nadie |
 
 **Contexto**: zonas con conectividad limitada, barreras de idioma y desinformación médica, donde el acceso a centros de salud suele ser lejano.
 
@@ -91,9 +91,9 @@ Metztli tiene tres perfiles de acceso. Cada uno solo ve y hace lo que necesita:
 
 | Perfil | Para qué sirve |
 | :--- | :--- |
-| **Usuaria** (Usuario) | Es el perfil de todas las personas que usan la app: registrar su etapa, aprender, participar en el foro y, si quieren, respaldar sus propios datos. |
-| **Administradora** (Admin) | Cuida el contenido de la plataforma: gestiona las cuentas y sus perfiles, modera el foro y mantiene los mitos y el directorio. |
-| **Auditora** (Auditor) | Revisa que todo funcione con transparencia: consulta estadísticas generales y el historial de acciones, solo para lectura. |
+| **Usuarios** | Es el perfil de todas las personas que usan la app: registrar su etapa, aprender, participar en el foro y, si quieren, respaldar sus propios datos. |
+| **Administradores** | Cuida el contenido de la plataforma: gestiona las cuentas y sus perfiles, modera el foro y mantiene los mitos y el directorio. |
+| **Auditores** | Revisa que todo funcione con transparencia: consulta estadísticas generales y el historial de acciones, solo para lectura. |
 
 **Privacidad ante todo**: los datos de salud de cada persona son solo suyos. Ni la administración ni la auditoría pueden verlos, y las acciones del personal quedan registradas en un historial que no se puede modificar. El detalle técnico y las pruebas están en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
 
@@ -111,7 +111,7 @@ flowchart LR
         AUTH[Auth<br/>correo + contraseña]
         PG[(PostgreSQL + RLS<br/>roles y auditoría)]
     end
-    DB <-->|foro y mitos siempre<br/>respaldo solo si la usuaria lo activa| PG
+    DB <-->|foro y mitos siempre<br/>respaldo solo si el usuario lo activa| PG
     UI <--> AUTH
     GH[GitHub Actions] -->|APK| Telefono
     GH -->|Web demo| PAGES[GitHub Pages]
@@ -183,7 +183,7 @@ En Supabase → **SQL Editor**, pega y ejecuta `backend/supabase/setup_completo.
 ```bash
 node scripts/check-supabase.mjs     # debe terminar en "Todo en orden"
 ```
-Para tener una administradora y una auditora, sigue [`backend/supabase/seed_roles_demo.sql`](backend/supabase/seed_roles_demo.sql).
+Para tener un administrador y un auditor, sigue [`backend/supabase/seed_roles_demo.sql`](backend/supabase/seed_roles_demo.sql).
 
 ### 3. Ejecutar
 ```bash

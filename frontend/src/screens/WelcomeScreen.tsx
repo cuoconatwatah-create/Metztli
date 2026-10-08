@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
 
           <View style={styles.actions}>
             <Button
-              label={u('COMENZAR (Usuaria)')}
+              label={u('COMENZAR (Usuario)')}
               onPress={() => navigation.navigate('Auth')}
             />
             <Button
