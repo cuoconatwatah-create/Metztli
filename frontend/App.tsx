@@ -34,6 +34,7 @@ import { pushHealthBackup } from '@/db/cloud';
 import { isCloudBackupEnabled } from '@/lib/prefs';
 import { colors, fonts } from '@/theme';
 import { StageProvider, isStage } from '@/context/StageContext';
+import { RoleProvider } from '@/context/RoleContext';
 import { getUserProfile } from '@/db/database';
 import { getStagePref } from '@/lib/prefs';
 import type { LifeStageMode } from '@/types';
@@ -55,6 +56,8 @@ import DirectoryScreen from '@/screens/DirectoryScreen';
 import { BrujulaLunarScreen } from '@/screens/BrujulaLunarScreen';
 import DesmitificadorScreen from '@/screens/DesmitificadorScreen';
 import PartnerMainScreen from '@/screens/PartnerMainScreen';
+import AdminPanelScreen from '@/screens/AdminPanelScreen';
+import AuditPanelScreen from '@/screens/AuditPanelScreen';
 import PregnancyTimelineScreen from '@/screens/PregnancyTimelineScreen';
 import KickCounterScreen from '@/screens/KickCounterScreen';
 import ObstetricAlarmScreen from '@/screens/ObstetricAlarmScreen';
@@ -160,6 +163,7 @@ export default function App() {
 
   return (
     <StageProvider initial={initialStage}>
+    <RoleProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
@@ -178,11 +182,14 @@ export default function App() {
         <Stack.Screen name="BrujulaLunar" component={BrujulaLunarScreen} options={{ ...headerOptions, title: u('Calendario') }} />
         <Stack.Screen name="Desmitificador" component={DesmitificadorScreen} />
         <Stack.Screen name="PartnerMain" component={PartnerMainScreen} />
+        <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+        <Stack.Screen name="AuditPanel" component={AuditPanelScreen} />
         <Stack.Screen name="PregnancyTimeline" component={PregnancyTimelineScreen} />
         <Stack.Screen name="KickCounter" component={KickCounterScreen} />
         <Stack.Screen name="ObstetricAlarm" component={ObstetricAlarmScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </RoleProvider>
     </StageProvider>
   );
 }

@@ -5,7 +5,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Share, Alert, Switch } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Users, PhoneCall, Baby, CalendarDays, HeartHandshake, LogOut, Share2, ChevronRight } from 'lucide-react-native';
+import { ShieldCheck, ClipboardCheck, Users, PhoneCall, Baby, CalendarDays, HeartHandshake, LogOut, Share2, ChevronRight } from 'lucide-react-native';
 import { getDailyLogs } from '@/db/database';
 import { supabase } from '@/lib/supabase';
 import { isCloudBackupEnabled, setCloudBackupEnabled } from '@/lib/prefs';
@@ -15,6 +15,8 @@ import type { DailyLog } from '@/types';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import StageSwitcher from '@/components/StageSwitcher';
 import { useStage } from '@/context/StageContext';
+import { useRole } from '@/context/RoleContext';
+import { ROLE_LABELS } from '@/lib/roles';
 import { Card, CurvedHeader, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius } from '@/theme';
 import { useUi, type UiFn } from '@/i18n/ui';
@@ -58,6 +60,7 @@ export default function PerfilScreen() {
   const navigation = useNavigation<any>();
   const [name, setName] = useState('');
   const { stage: mode } = useStage();
+  const { role, isStaff, signedIn } = useRole();
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [backup, setBackup] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -202,6 +205,12 @@ export default function PerfilScreen() {
           <SectionTitle>{u('Mi etapa')}</SectionTitle>
           <StageSwitcher tone="dark" />
 
+          {signedIn && (
+            <View style={styles.roleBadge} accessibilityLabel={u('Tu rol: {{role}}', { role: u(ROLE_LABELS[role]) })}>
+              <Text style={styles.roleBadgeText}>{u('Tu rol: {{role}}', { role: u(ROLE_LABELS[role]) })}</Text>
+            </View>
+          )}
+
           <SectionTitle>{u('Resumen')} · {month}</SectionTitle>
           <View style={styles.stats}>
             <Stat value={String(logs.length)} label={u('Días registrados')} />
@@ -241,6 +250,12 @@ export default function PerfilScreen() {
           <SectionTitle>{u('Mi espacio')}</SectionTitle>
           <Card style={{ padding: 4 }}>
             <Row icon={<Users size={18} color={colors.carmin} />} label={u('Tribu comunitaria (foro anónimo)')} onPress={() => navigation.navigate('Foro')} />
+            {role === 'admin' && (
+              <Row icon={<ShieldCheck size={18} color={colors.carmin} />} label={u('Panel de administración')} onPress={() => navigation.navigate('AdminPanel')} />
+            )}
+            {isStaff && (
+              <Row icon={<ClipboardCheck size={18} color={colors.carmin} />} label={u('Panel de auditoría')} onPress={() => navigation.navigate('AuditPanel')} />
+            )}
             <Row icon={<PhoneCall size={18} color={colors.carmin} />} label={u('Directorio de emergencias')} onPress={() => navigation.navigate('Directorio')} />
             <Row icon={<CalendarDays size={18} color={colors.carmin} />} label={u('Calendario completo')} onPress={() => navigation.navigate('BrujulaLunar')} />
             {mode === 'pregnancy' && (
@@ -302,6 +317,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   shareText: { fontFamily: fonts.semibold, fontSize: 11, color: colors.carmin },
+  roleBadge: { alignSelf: 'flex-start', backgroundColor: colors.bosque, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  roleBadgeText: { fontFamily: fonts.semibold, fontSize: 11, color: colors.white },
   stageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   stat: { width: '47.5%', alignItems: 'center', gap: 2, paddingVertical: 14 },

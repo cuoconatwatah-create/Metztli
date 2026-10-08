@@ -1,14 +1,14 @@
-﻿# Metztli — Salud Femenina Integral Intercultural (Offline-First)
+# Metztli — Salud Femenina Integral Intercultural (Offline-First)
 
 <div align="center">
 
-![Metztli Version](https://img.shields.io/badge/Versi%C3%B3n-2.0.1-6C4AB6?style=for-the-badge)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.1-8B2635?style=for-the-badge)
 ![React Native](https://img.shields.io/badge/React_Native-0.74-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Expo SDK](https://img.shields.io/badge/Expo_SDK-51.0-000020?style=for-the-badge&logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-Offline--First-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-Cloud_Sync-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_APK-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Auth_%2B_RLS-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-APK_%2B_Web_Pages-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
 </div>
 
@@ -16,151 +16,175 @@
 
 ## 🌙 Acerca de Metztli
 
-**Metztli** es una solución tecnológica de salud sexual, reproductiva y comunitaria diseñada especialmente para mujeres y personas gestantes en la **Costa Caribe de Nicaragua** (Regiones Autónomas RACCN y RACCS: Bluefields, Bilwi/Puerto Cabezas, Waspam, Corn Island y comunidades rurales circundantes).
+**Metztli** es una aplicación de salud sexual, reproductiva y comunitaria para mujeres y personas gestantes de la **Costa Caribe de Nicaragua** (RACCN y RACCS: Bluefields, Bilwi, Waspam, Corn Island y comunidades rurales). Responde a tres problemas: conectividad limitada, barreras de idioma y desinformación médica.
 
-El proyecto aborda los desafíos críticos de conectividad limitada, barreras lingüísticas y desinformación médica a través de tres pilares fundamentales:
-1. **Arquitectura 100% Offline-First**: Operatividad completa sin conexión a Internet mediante base de datos embebida SQLite local y cola de sincronización resiliente cuando se restablece la red.
-2. **Interculturalidad Trilingüe**: Soporte nativo de idiomas locales con cambio dinámico entre **Español**, **Miskitu** y **Creole (Kriol)**.
-3. **Privacidad y Protección Médica Estricta**: Almacenamiento local seguro de registros íntimos (Privacy by Design), anonimato en dudas comunitarias y cero exposición de PII.
-
----
-
-## 🧭 Módulos y Funcionalidades Principales
-
-```
-                               ┌─────────────────────────────┐
-                               │         Metztli         │
-                               └──────────────┬──────────────┘
-            ┌──────────────────┬──────────────┼──────────────────┬──────────────────┐
-            ▼                  ▼              ▼                  ▼                  ▼
-     ┌──────────────┐   ┌──────────────┐┌──────────────┐  ┌──────────────┐   ┌──────────────┐
-     │Brújula Lunar │   │   Maternidad ││Desmitificador│  │  Directorio  │   │     Tribu    │
-     │  (Ciclos y   │   │  (Pataditas, ││Intercultural │  │Comunitario de│   │    (Foro     │
-     │  Síntomas)   │   │  Semáforo)   ││  Científico  │  │  Emergencia  │   │   Anónimo)   │
-     └──────────────┘   └──────────────┘└──────────────┘  └──────────────┘   └──────────────┘
-            │                                                            │
-            └─────────► Modo Acompañante / Pareja (Tribu Code) ◄─────────┘
-```
-
-- 🩸 **Brújula Lunar**: Calendario ovulatorio y menstrual con rueda visual lunar, registro diario de flujo, cólicos, nivel de estrés, emociones y notas privadas.
-- 🤰 **Módulo de Maternidad y Embarazo (NBU & Triage Offline)**:
-  - **Dashboard Gestacional de Progreso**: Calculadora visual con tiempo actual ("Semana 28"), cuenta regresiva ("Faltan 12 sem."), barra de progreso y comparativa de desarrollo fetal.
-  - **Asistencia de Voz Inclusiva (`expo-speech`)**: Call to Action de audio "Escuchar consejo de hoy" con síntesis de voz en español pausada para usuarias con distintos niveles de alfabetización.
-  - **Semáforo Clínico de Estado Materno**: Tres tarjetas visuales (Verde: Todo bajo control, Blanco: Próximo control prenatal, Rojo: Señales de alerta urgente).
-  - **Vista de Triage de Emergencias (Gestalt)**: Acordeón de revelación progresiva para síntomas críticos (hemorragias, fiebre alta, sospecha de preeclampsia, cese de movimientos fetales).
-  - **Canal de Auxilio SMS Nativo**: Botón de auxilio con enlace directo (`href="sms:+50588880000?body=..."`) a la Casa Materna/partera comunitaria sin requerir conexión a internet.
-- 💡 **Desmitificador Intercultural**: Mitos y realidades locales sobre menstruación, fertilidad, embarazo y menopausia, validados con evidencia médica y contextualizados culturalmente.
-- 🚨 **Directorio Comunitario de Emergencias**: Directorio offline de centros de salud, hospitales (e.g. Hospital Regional Ernesto Sequeira, Hospital Nuevo Amanecer), comisarías y brigadas comunitarias con llamada directa de un toque.
-- 💬 **Tribu Comunitaria (Foro Anónimo)**: Espacio seguro donde las usuarias publican inquietudes con seudónimos aleatorios; sincroniza cuando detecta conectividad.
-- 🤝 **Modo Pareja / Acompañante**: Dashboard educativo para que la pareja o acompañante comprenda la etapa actual, consejos de apoyo emocional y alertas clave mediante un código de enlace seguro.
-- 🌿 **Modo Menopausia**: Seguimiento especializado para la etapa de climaterio y post-menopausia.
+1. **Offline-First**: funciona completa sin internet con una base **SQLite** en el teléfono; sincroniza con **Supabase** cuando hay red.
+2. **Trilingüe**: **Español**, **Miskitu** y **Creole (Kriol)**, con cambio inmediato y audios comunitarios en Miskitu.
+3. **Privacidad por diseño**: los datos íntimos viven en el teléfono. El respaldo en la nube es **opcional** (apagado por defecto) y ni siquiera las administradoras pueden leer datos de salud de otras personas.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🧭 Etapas y módulos
+
+La app se organiza por **etapa de vida**. Cada etapa tiene sus propias pantallas y se puede cambiar en cualquier momento desde el selector de etapa (los datos de las demás se conservan).
+
+| Etapa | Pestañas | Qué ofrece |
+| :--- | :--- | :--- |
+| 🩸 **Menstruación** | Calendario · Cuerpo Mente · **+** · Aprendizaje · Perfil | Anillo del ciclo con fases, color del flujo, moco cervical, registro de período, "¿Cómo habitas tu día?", modo retiro |
+| 🤰 **Embarazo** | Embarazo · Controles · **+** · Aprendizaje · Perfil | Semana y progreso desde la FUM o fecha de parto, controles prenatales (con alerta de presión alta), contador de pataditas, señales de alarma, triage y auxilio por SMS |
+| 🌿 **Menopausia** | Inicio · Cuerpo Mente · **+** · Aprendizaje · Perfil | Registro de síntomas, consejos y contenido de la etapa |
+
+Módulos transversales: **Desmitificador** (mitos y verdades, con audio en Miskitu), **Aprendizaje** (botiquín de saberes con lectura por voz), **Tribu** (foro anónimo), **Directorio de emergencias**, **Modo acompañante** y **Perfil e Historial**.
+
+```mermaid
+flowchart TD
+    W[Bienvenida] --> A[Cuenta o uso sin cuenta]
+    A --> E{Elegir etapa}
+    E -->|Menstruación| C[Calendario · Cuerpo Mente · Aprendizaje · Perfil]
+    E -->|Embarazo| P[Embarazo · Controles · Aprendizaje · Perfil]
+    E -->|Menopausia| M[Inicio · Cuerpo Mente · Aprendizaje · Perfil]
+    C <-->|selector de etapa| P
+    P <-->|selector de etapa| M
+    M <-->|selector de etapa| C
+    C --> R[+ Registrar mi día]
+    P --> R
+    M --> R
+    PF[Perfil] --> AD[Panel de administración]
+    PF --> AU[Panel de auditoría]
+```
+
+---
+
+## 👥 Roles y seguridad
+
+Tres roles funcionales, **aplicados en la base de datos** (políticas RLS y funciones), no solo en la interfaz:
+
+| Rol | Puede | No puede |
+| :--- | :--- | :--- |
+| **Usuaria** (por defecto) | Usar todas las etapas, respaldar *sus* datos, publicar en el foro | Ver datos de otras, cambiar roles, ver la bitácora |
+| **Administradora** | Asignar roles, moderar el foro, gestionar mitos y directorio | Leer ciclos, embarazos o registros de nadie |
+| **Auditora** | Ver la bitácora de acciones y estadísticas agregadas (solo lectura) | Modificar algo; leer datos de salud |
+
+Cada acción del personal queda en una **bitácora inmutable** (`audit_log`). Detalle y pruebas en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
+
+---
+
+## 🏗️ Arquitectura
+
+```mermaid
+flowchart LR
+    subgraph Telefono["📱 Teléfono (offline-first)"]
+        UI[React Native + Expo<br/>3 etapas · 3 idiomas] --> DB[(SQLite local<br/>esquema v3, 2FN)]
+        UI --> SS[SecureStore<br/>sesión y preferencias]
+    end
+    subgraph Nube["☁️ Supabase"]
+        AUTH[Auth<br/>correo + contraseña]
+        PG[(PostgreSQL + RLS<br/>roles y auditoría)]
+    end
+    DB <-->|foro y mitos siempre<br/>respaldo solo si la usuaria lo activa| PG
+    UI <--> AUTH
+    GH[GitHub Actions] -->|APK| Telefono
+    GH -->|Web demo| PAGES[GitHub Pages]
+```
+
+---
+
+## 🛠️ Stack tecnológico
 
 | Capa | Tecnología | Propósito |
 | :--- | :--- | :--- |
-| **Framework Móvil** | React Native 0.74 + Expo SDK 51 | Desarrollo multiplataforma optimizado para Android y Web |
-| **Lenguaje** | TypeScript 5.3 (Strict Mode) | Tipado estricto para confiabilidad médica y mantenibilidad |
-| **Estilos y UI** | NativeWind (Tailwind CSS v3) + Lucide Icons | Interfaz moderna, accesible, responsiva y temática oscura/lunar |
-| **Accesibilidad de Voz** | `expo-speech` (~12.0.2) | Síntesis de voz offline para consejos gestacionales y triage NBU |
-| **Base de Datos Local** | `expo-sqlite` (~14.0.0) | Almacenamiento offline-first persistente en el dispositivo |
-| **Capa de Criptografía** | `expo-secure-store` (~13.0.0) | Almacenamiento seguro de tokens y credenciales (Keystore/Keychain) |
-| **Backend & Cloud** | Supabase (PostgreSQL + RLS) | Persistencia comunitaria, autenticación anónima y sincronización |
-| **Internacionalización** | `i18next` + `react-i18next` | Soporte trilingüe en tiempo real: Español, Miskitu, Creole |
-| **Conectividad** | `@react-native-community/netinfo` | Detección de red en tiempo real y disparo de sincronizaciones |
-| **CI / CD** | GitHub Actions | Compilación y empaquetado automatizado de APKs para Android |
+| App | React Native 0.74 + Expo SDK 51, TypeScript estricto | Android y web con un solo código |
+| Navegación | React Navigation (tabs por etapa + stack) | Pantallas independientes por etapa |
+| Estilos | Tokens propios (`src/theme`) + Inter (`@expo-google-fonts`) | Paleta Avena / Carmín / Bosque del prototipo de Figma |
+| Datos locales | `expo-sqlite` | Fuente principal, funciona sin conexión |
+| Nube | Supabase (PostgreSQL 15, Auth, RLS) | Foro, mitos, respaldo opcional, roles y auditoría |
+| i18n | `i18next` + espacio `ui` (el texto en español es la clave) | Español, Miskitu y Creole |
+| Audio | `expo-speech`, `expo-av` | Lectura por voz y audios en Miskitu |
+| Seguridad local | `expo-secure-store` | Sesión y preferencias |
+| CI/CD | GitHub Actions | APK y web demo automáticos |
 
 ---
 
-## 📂 Estructura del Repositorio
+## 📂 Estructura del repositorio
 
 ```
-Metztli_2.0/
-├── .github/
-│   └── workflows/
-│       └── build-apk.yml           # Pipeline de CI/CD para compilar APK en GitHub Actions
+Metztli/
+├── .github/workflows/
+│   ├── build-apk.yml            # APK en cada push a main (+ Release en etiquetas v*)
+│   └── deploy-web.yml           # Web demo en GitHub Pages
 ├── backend/
 │   └── supabase/
-│       └── migrations/
-│           ├── 20240101000000_init.sql   # Esquema PostgreSQL, RLS y tablas base
-│           └── 20240101000001_myths.sql  # Mitos interculturales y políticas de lectura
-├── docs/                           # Documentación formal de entregables
-│   ├── README.md                   # Índice general de documentación
-│   ├── SEGURIDAD_Y_BUENAS_PRACTICAS.md # Entregable: Seguridad, RLS, cifrado y privacidad
-│   ├── EJECUCION_DE_LA_SOLUCION.md     # Entregable: Guía completa de ejecución y APK
-│   ├── DIAGRAMA_BASE_DATOS.md          # Entregable: Diagrama ER Mermaid y esquemas
-│   ├── INTERFAZ_Y_DESARROLLO.md        # Entregable: UI/UX, arquitectura de pantallas
-│   └── CONTROL_DE_VERSIONES.md         # Entregable: Git flow, SemVer y CI/CD
+│       ├── migrations/          # 000–006: tablas, RLS, roles, auditoría
+│       └── setup_completo.sql   # Todo junto, para pegar en el SQL Editor
+├── docs/                        # Entregables (ver tabla más abajo)
 ├── frontend/
-│   ├── assets/                     # Iconos y splash screens de la aplicación
-│   ├── src/
-│   │   ├── components/             # Componentes reutilizables (AlarmCard, Wheel, etc.)
-│   │   ├── data/                   # Datos locales y preguntas frecuentes
-│   │   ├── db/                     # Base de datos SQLite, migraciones y sincronizador
-│   │   │   ├── database.ts         # Inicialización, tablas y consultas parametrizadas
-│   │   │   ├── seedData.ts         # Datos semilla (contactos de Bluefields/Bilwi)
-│   │   │   └── sync.ts             # Motor de sincronización con Supabase
-│   │   ├── hooks/                  # Custom hooks (useCycleCalculator, useSyncQueue, etc.)
-│   │   ├── i18n/                   # Localización (es.json, miskitu.json, creole.json)
-│   │   ├── lib/                    # Cliente Supabase seguro con SecureStore
-│   │   ├── screens/                # Pantallas principales del sistema
-│   │   └── types/                  # Definiciones de tipos TypeScript
-│   ├── .env.example                # Plantilla de variables de entorno seguras
-│   ├── app.json                    # Configuración de Expo
-│   ├── eas.json                    # Perfiles de compilación EAS Build
-│   └── package.json                # Dependencias y scripts de ejecución
-└── README.md                       # README Técnico Principal (Este documento)
+│   ├── App.tsx                  # Proveedores (etapa, rol), navegación y arranque
+│   ├── app.json · app.config.js · eas.json · metro.config.js
+│   ├── assets/                  # Logo, icono adaptable y audios en Miskitu
+│   └── src/
+│       ├── navigation/          # Pestañas por etapa y barra inferior
+│       ├── context/             # StageContext (etapa) y RoleContext (rol)
+│       ├── screens/             # Pantallas (CycleHome, PregnancyHome, Prenatal, AdminPanel…)
+│       ├── components/          # UI kit, CycleRing, StageSwitcher, Logo vectorial…
+│       ├── db/                  # SQLite: schema.ts, pregnancySchema.ts, sync, respaldo en la nube
+│       ├── lib/                 # dailyLog, roles, prefs, audio, supabase
+│       ├── i18n/                # es / miskitu / creole + textos de interfaz
+│       ├── data/                # Artículos y audios del Desmitificador
+│       └── theme/               # Colores, tipografía, radios y sombras
+├── scripts/check-supabase.mjs   # Verifica conexión, tablas, RLS y roles
+└── README.md
 ```
 
 ---
 
-## 🚀 Inicio Rápido
+## 🚀 Inicio rápido
 
 ### 1. Instalación
 ```bash
 git clone https://github.com/cuoconatwatah-create/Metztli.git
 cd Metztli/frontend
 npm install
-cp .env.example .env
+cp .env.example .env     # en Windows: copy .env.example .env
 ```
+Edita `frontend/.env` con la URL y la *publishable key* de tu proyecto de Supabase (nunca la `service_role`).
 
-### 2. Ejecutar Demo Web Instantánea (Sin emulador)
+### 2. Crear el backend (una sola vez)
+En Supabase → **SQL Editor**, pega y ejecuta `backend/supabase/setup_completo.sql`. Luego verifica:
 ```bash
-npm run web
+node scripts/check-supabase.mjs     # debe terminar en "Todo en orden"
 ```
-Abre automáticamente en `http://localhost:8081`.
+Para tener una administradora y una auditora, sigue [`backend/supabase/seed_roles_demo.sql`](backend/supabase/seed_roles_demo.sql).
 
-### 3. Ejecutar en Dispositivo Móvil (Expo Go)
+### 3. Ejecutar
 ```bash
-npx expo start -c
+cd frontend
+npm run web              # demo web en http://localhost:8081
+npx expo start -c        # móvil con Expo Go (escanea el QR)
 ```
-Escanea el código QR con la app **Expo Go** en Android.
 
-### 4. Compilar APK Android
-```bash
-npx expo prebuild --platform android --clean
-cd android && ./gradlew assembleRelease
-```
-El APK se genera en: `frontend/android/app/build/outputs/apk/release/app-release.apk`.
+### 4. APK Android
+- **Automático:** el workflow *Build Android APK* genera el APK en cada push a `main` (pestaña **Actions → Artifacts**) y, al crear una etiqueta `v*`, lo publica en **Releases**.
+- **Local:** `npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease`
 
-Para instrucciones completas de backend, cloud builds y depuración, consulta la [Guía de Ejecución de la Solución](file:///c:/Metzlit_2.0/docs/EJECUCION_DE_LA_SOLUCION.md).
+Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md).
 
 ---
 
-## 📚 Documentación de Entregables
+## 📚 Documentación de entregables
 
-Para consultar en profundidad los entregables evaluados, dirígete a:
+| # | Entregable | Documento |
+| :--: | :--- | :--- |
+| 1 | README técnico | Este archivo + [Ejecución de la Solución](docs/EJECUCION_DE_LA_SOLUCION.md) |
+| 2 | Diagramación de BD (hasta 2FN) | [Diagrama de Base de Datos](docs/DIAGRAMA_BASE_DATOS.md) |
+| 3 | Interfaces y desarrollo | [Interfaz y Desarrollo](docs/INTERFAZ_Y_DESARROLLO.md) |
+| 4 | Control de versiones | [Control de Versiones](docs/CONTROL_DE_VERSIONES.md) |
+| 5 | Seguridad y roles | [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md) |
+| 6 | Ejecución y demostración | [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md) (incluye el guion del video) |
 
-1. 🔒 **[Seguridad y Buenas Prácticas](file:///c:/Metzlit_2.0/docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md)**: Privacidad médica, SecureStore, Row Level Security (RLS) y mitigación de SQL Injection.
-2. ⚙️ **[Ejecución de la Solución](file:///c:/Metzlit_2.0/docs/EJECUCION_DE_LA_SOLUCION.md)**: Guía de despliegue paso a paso, web preview, emulador y artefactos de compilación.
-3. 🗄️ **[Diagrama de Base de Datos](file:///c:/Metzlit_2.0/docs/DIAGRAMA_BASE_DATOS.md)**: Diagrama ER interactivo en Mermaid, modelo SQLite local y réplica en Supabase.
-4. 🎨 **[Interfaz y Desarrollo](file:///c:/Metzlit_2.0/docs/INTERFAZ_Y_DESARROLLO.md)**: Guía de diseño, accesibilidad, sistema trilingüe y catálogo de pantallas.
-5. 🌿 **[Control de Versiones](file:///c:/Metzlit_2.0/docs/CONTROL_DE_VERSIONES.md)**: Estrategia de ramas, SemVer, Conventional Commits y CI/CD con GitHub Actions.
+Complementarios: [Funcionalidades del Reto](docs/FUNCIONALIDADES_DEL_RETO.md) · [Guía de Usuario Rápida](docs/GUIA_DE_USUARIO_RAPIDA.md)
 
 ---
 
-## 👥 Equipo y Créditos
+## 👥 Equipo y créditos
 - **Metztli Team — Costa Caribe de Nicaragua**
-- Licencia: Código de impacto social y comunitario.
+- Licencia: código de impacto social y comunitario.

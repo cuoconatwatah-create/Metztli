@@ -760,6 +760,32 @@ export async function getLocalMyths(): Promise<Myth[]> {
   return myths;
 }
 
+/**
+ * Quita de este teléfono las publicaciones ya sincronizadas que la nube dejó de tener
+ * (moderación). Solo dentro de la ventana que se acaba de bajar: lo más antiguo no se toca.
+ */
+export async function pruneSyncedForumPosts(keepUuids: string[], sinceISO: string | null): Promise<void> {
+  const keep = new Set(keepUuids);
+  if (Platform.OS === 'web') {
+    for (let i = fallbackForumPosts.length - 1; i >= 0; i--) {
+      const p = fallbackForumPosts[i];
+      const inWindow = sinceISO === null || p.created_at >= sinceISO;
+      if (p.is_synced === 1 && inWindow && !keep.has(p.local_uuid) && !p.local_uuid.startsWith('f')) fallbackForumPosts.splice(i, 1);
+    }
+    return;
+  }
+  const database = await openDatabase();
+  const rows = (await database.getAllAsync(
+    sinceISO === null
+      ? 'SELECT local_uuid FROM forum_posts WHERE is_synced = 1'
+      : 'SELECT local_uuid FROM forum_posts WHERE is_synced = 1 AND created_at >= ?',
+    sinceISO === null ? [] : [sinceISO]
+  )) as { local_uuid: string }[];
+  for (const r of rows) {
+    if (!keep.has(r.local_uuid)) await database.runAsync('DELETE FROM forum_posts WHERE local_uuid = ?', [r.local_uuid]);
+  }
+}
+
 export async function syncMythsFromSupabase(): Promise<void> {
   try {
     const { data: remoteMyths, error } = await supabase
@@ -779,6 +805,9 @@ export async function syncMythsFromSupabase(): Promise<void> {
           [myth.id, myth.category, myth.myth, myth.reality]
         );
       }
+      // La nube es la fuente de verdad: un mito eliminado por la administradora sale también de aquí
+      const ids = remoteMyths.map((m: any) => m.id as string);
+      await database.runAsync(`DELETE FROM myths WHERE id NOT IN (${ids.map(() => '?').join(', ')})`, ids);
     }
   } catch (err) {
     console.error('Error syncing myths:', err);

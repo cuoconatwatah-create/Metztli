@@ -37,7 +37,7 @@ try {
   process.exit(1);
 }
 
-const tables = ['profiles', 'pregnancies', 'prenatal_checkups', 'kick_sessions', 'myths', 'directory_contacts', 'forum_posts', 'user_cycle_logs', 'cycles', 'symptoms', 'daily_logs', 'daily_log_symptoms', 'daily_log_habits'];
+const tables = ['user_roles', 'audit_log', 'profiles', 'pregnancies', 'prenatal_checkups', 'kick_sessions', 'myths', 'directory_contacts', 'forum_posts', 'user_cycle_logs', 'cycles', 'symptoms', 'daily_logs', 'daily_log_symptoms', 'daily_log_habits'];
 for (const t of tables) {
   const r = await fetch(`${url}/rest/v1/${t}?select=*&limit=1`, { headers });
   if (r.status === 200) ok(`tabla ${t}`);
@@ -46,11 +46,23 @@ for (const t of tables) {
 }
 
 // Los datos íntimos deben estar protegidos por RLS: sin sesión no se ve nada
-for (const t of ['daily_logs', 'cycles', 'profiles', 'pregnancies']) {
+for (const t of ['daily_logs', 'cycles', 'profiles', 'pregnancies', 'user_roles', 'audit_log']) {
   const r = await fetch(`${url}/rest/v1/${t}?select=*&limit=1`, { headers });
   if (r.status === 200 && (await r.json()).length === 0) ok(`RLS ${t}: anónimo no ve filas`);
   else if (r.status === 200) bad(`RLS ${t}: ¡un anónimo puede leer filas!`);
 }
+
+// Roles: sin sesión no se puede cambiar roles, ver estadísticas ni escribir contenido
+const rpc = (fn, body = {}) => fetch(`${url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const role = await rpc('my_role');
+if (role.status === 200 && (await role.json()) === 'anon') ok('my_role(): sin sesión devuelve "anon"');
+else bad(`my_role() inesperado (HTTP ${role.status}); aplica la migración 006`);
+for (const [fn, body] of [['audit_stats', {}], ['admin_list_users', {}], ['set_user_role', { target: '00000000-0000-0000-0000-000000000001', new_role: 'admin' }]]) {
+  const r = await rpc(fn, body);
+  r.status === 401 || r.status === 403 || r.status === 404 ? ok(`${fn}(): bloqueada sin sesión`) : bad(`${fn}(): ¡respondió HTTP ${r.status} sin sesión!`);
+}
+const myth = await fetch(`${url}/rest/v1/myths`, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify({ id: 'zz-test', category: 'ciclo', myth: 'x', reality: 'x' }) });
+myth.status === 401 || myth.status === 403 ? ok('myths: un anónimo no puede escribir') : bad(`myths: ¡un anónimo pudo escribir (HTTP ${myth.status})!`);
 
 // Catálogo y mitos sembrados
 const myths = await fetch(`${url}/rest/v1/myths?select=id`, { headers });

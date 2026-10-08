@@ -43,3 +43,14 @@ export async function getStagePref(): Promise<string | null> {
 export async function setStagePref(stage: string): Promise<void> {
   await write(STAGE_KEY, stage);
 }
+
+const ROLE_KEY = 'cached_role';
+
+/** Copia del rol solo para pintar la interfaz sin conexión (la autoridad es la base de datos). */
+export async function getRolePref(): Promise<string | null> {
+  return read(ROLE_KEY);
+}
+
+export async function setRolePref(role: string): Promise<void> {
+  await write(ROLE_KEY, role);
+}

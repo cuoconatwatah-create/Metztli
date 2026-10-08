@@ -9,7 +9,7 @@
 
 import NetInfo from '@react-native-community/netinfo';
 import { supabase } from '@/lib/supabase';
-import { getUnsyncedPosts, markPostAsSynced, saveRemoteForumPosts } from '@/db/database';
+import { getUnsyncedPosts, markPostAsSynced, saveRemoteForumPosts, pruneSyncedForumPosts } from '@/db/database';
 
 export interface ForumSyncResult {
   pushed: number;
@@ -61,6 +61,9 @@ export async function syncForum(): Promise<ForumSyncResult> {
     } else if (data?.length) {
       await saveRemoteForumPosts(data);
       result.pulled = data.length;
+      // Moderación: si se bajó todo el historial, o la ventana más reciente, se retira lo que ya no existe en la nube
+      const oldest = data.length >= PULL_LIMIT ? data[data.length - 1].created_at : null;
+      await pruneSyncedForumPosts(data.map((p) => p.local_uuid), oldest);
     }
   } catch (err) {
     result.error = String(err);
