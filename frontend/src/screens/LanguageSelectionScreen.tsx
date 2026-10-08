@@ -1,12 +1,14 @@
-﻿// ─────────────────────────────────────────────────────────
-// Metztli — Language Selection Screen (Onboarding)
+// ─────────────────────────────────────────────────────────
+// Metztli — Selección de idioma (primera pantalla)
 // ─────────────────────────────────────────────────────────
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import GlassCard from '@/components/GlassCard';
+import Logo from '@/components/Logo';
+import { Button, StepDots } from '@/components/ui';
+import { colors, fonts, radius, shadow } from '@/theme';
 
 type RootStackParamList = {
   LanguageSelection: undefined;
@@ -20,17 +22,21 @@ type Props = {
 
 type LanguageCode = 'es' | 'miskitu' | 'creole';
 
+const LANGUAGES: { code: LanguageCode; name: string }[] = [
+  { code: 'es', name: 'Español' },
+  { code: 'miskitu', name: 'Mískitu' },
+  { code: 'creole', name: 'Creole' },
+];
+
 export default function LanguageSelectionScreen({ navigation }: Props) {
   const { t, i18n } = useTranslation();
+  const { width, height } = useWindowDimensions();
   const [selectedLang, setSelectedLang] = useState<LanguageCode>(
     (i18n.language as LanguageCode) || 'es'
   );
 
-  const languages: { code: LanguageCode; name: string }[] = [
-    { code: 'es', name: 'Español' },
-    { code: 'miskitu', name: 'Mískitu' },
-    { code: 'creole', name: 'Creole' }
-  ];
+  // El emblema se ajusta a la pantalla (teléfonos pequeños y ventanas bajas).
+  const logoSize = Math.round(Math.min(150, Math.max(90, Math.min(width * 0.45, height * 0.2))));
 
   const handleSelect = (code: LanguageCode) => {
     setSelectedLang(code);
@@ -46,29 +52,32 @@ export default function LanguageSelectionScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
-          {/* Logo Placeholder */}
-          <View style={styles.logoPlaceholder}>
-             <Text style={styles.logoText}>M</Text>
-          </View>
-          <Text style={styles.appName}>{t('app.name')}</Text>
+          <Logo size={logoSize} />
           <Text style={styles.tagline}>{t('app.tagline')}</Text>
         </View>
 
-        <GlassCard variant="default" className="mt-8">
+        <View style={styles.card}>
           <Text style={styles.title}>{t('language.title')}</Text>
           <Text style={styles.subtitle}>{t('language.subtitle')}</Text>
 
-          <View style={styles.optionsContainer}>
-            {languages.map((lang) => {
+          <View style={styles.options} accessibilityRole="radiogroup">
+            {LANGUAGES.map((lang) => {
               const isActive = selectedLang === lang.code;
               return (
                 <TouchableOpacity
                   key={lang.code}
                   style={[styles.option, isActive && styles.optionActive]}
                   onPress={() => handleSelect(lang.code)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={lang.name}
                 >
                   <Text style={[styles.optionText, isActive && styles.optionTextActive]}>
                     {lang.name}
@@ -78,117 +87,78 @@ export default function LanguageSelectionScreen({ navigation }: Props) {
             })}
           </View>
 
-          <TouchableOpacity 
-            style={styles.continueButton} 
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
-          </TouchableOpacity>
-        </GlassCard>
+          <Button label={t('common.continue')} onPress={handleContinue} />
+        </View>
+
+        <StepDots total={5} active={0} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
+  safeArea: { flex: 1, backgroundColor: colors.avena },
   container: {
     flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#8B2635',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#8B2635',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    gap: 24,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#F4F1EA',
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
+  header: { alignItems: 'center', gap: 10 },
   tagline: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
+    fontFamily: fonts.italic,
+    fontStyle: 'italic',
+    fontSize: 15,
+    color: colors.carmin,
     textAlign: 'center',
   },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 20,
+    gap: 14,
+    ...shadow.card,
+  },
   title: {
+    fontFamily: fonts.display,
     fontSize: 22,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 8,
+    color: colors.carmin,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.muted,
     textAlign: 'center',
+    marginBottom: 4,
   },
-  optionsContainer: {
-    gap: 12,
-    marginBottom: 32,
-  },
+  options: { gap: 10, marginBottom: 6 },
   option: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: radius.pill,
+    backgroundColor: colors.avena,
     borderWidth: 1,
-    borderColor: 'rgba(44, 61, 48, 0.1)',
+    borderColor: colors.line,
   },
   optionActive: {
-    backgroundColor: 'rgba(139, 38, 53, 0.1)',
-    borderColor: 'rgba(139, 38, 53, 0.4)',
+    backgroundColor: colors.blush,
+    borderColor: colors.carmin,
   },
   optionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: colors.carbon,
     textAlign: 'center',
   },
   optionTextActive: {
-    color: '#8B2635',
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    color: colors.carmin,
   },
-  continueButton: {
-    backgroundColor: '#2C3D30',
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#2C3D30',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  continueButtonText: {
-    color: '#F4F1EA',
-    fontSize: 18,
-    fontWeight: '700',
-  }
 });
