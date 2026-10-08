@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Myth } from '@/types';
 import { getLocalMyths, syncMythsFromSupabase, fallbackMyths } from '@/db/database';
+import MythAudioButtons from '@/components/MythAudioButtons';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -107,6 +108,7 @@ export default function DesmitificadorScreen() {
                     <Text style={styles.realityTitle}>Realidad</Text>
                   </View>
                   <Text style={styles.realityText}>{myth.reality}</Text>
+                  <MythAudioButtons mythId={myth.id} />
                 </View>
               )}
             </TouchableOpacity>

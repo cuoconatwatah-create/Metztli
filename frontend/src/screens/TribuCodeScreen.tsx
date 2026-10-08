@@ -1,137 +1,96 @@
-import React from 'react';
+// ─────────────────────────────────────────────────────────
+// Metztli — Código de acompañante (onboarding 4 del prototipo)
+// ─────────────────────────────────────────────────────────
+
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Share } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Users, Share2 } from 'lucide-react-native';
+import { Share2, Copy } from 'lucide-react-native';
+import { Button, BackLink, StepDots } from '@/components/ui';
+import { colors, fonts, radius, shadow } from '@/theme';
+import { useUi } from '@/i18n/ui';
 
 export default function TribuCodeScreen() {
+  const u = useUi();
   const navigation = useNavigation<any>();
-  
-  // Generar un código aleatorio para la demostración
-  const tribuCode = "METZ-" + Math.floor(100 + Math.random() * 900);
+
+  // Código de demostración: se genera una vez por apertura de la pantalla.
+  const code = useMemo(() => 'METZ-' + Math.floor(100 + Math.random() * 900), []);
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `¡Hola! Únete a mi Tribu en Metztli para acompañarme en mi ciclo. Mi código es: ${tribuCode}`,
+        message: u('¡Hola! Únete a mi red de apoyo en Metztli para acompañarme. Mi código es: {{code}}', { code }),
       });
     } catch (error) {
-      console.log('Error sharing', error);
+      console.warn('No se pudo compartir el código', error);
     }
   };
 
-  const handleSkip = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'MainTabs' }],
-    });
-  };
+  const goToApp = () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        <View style={styles.iconContainer}>
-          <Users size={64} color="#F4F1EA" />
-        </View>
+        <BackLink onPress={() => navigation.goBack()} />
 
-        <Text style={styles.title}>Sanamos mejor acompañadas</Text>
-        <Text style={styles.subtitle}>
-          Comparte este código con tu pareja, un familiar o tu mejor amiga para que sean parte de tu Red de Apoyo.
+        <Text style={styles.title}>
+          {u('Tener vínculos afectivos sólidos está directamente relacionado con nuestro bienestar.')}
         </Text>
 
         <View style={styles.codeCard}>
-          <Text style={styles.codeLabel}>TU CÓDIGO DE TRIBU</Text>
-          <Text style={styles.codeText}>{tribuCode}</Text>
+          <Text style={styles.codeLabel}>{u('CÓDIGO DE ACOMPAÑANTE')}</Text>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText} accessibilityLabel={u('Código {{code}}', { code })}>{code}</Text>
+            <TouchableOpacity style={styles.copy} onPress={handleShare} accessibilityLabel={u('Compartir código')}>
+              <Copy size={18} color="rgba(244,241,234,0.6)" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleShare}>
-          <Share2 size={20} color="#2C3D30" style={{ marginRight: 8 }} />
-          <Text style={styles.primaryBtnText}>Compartir por WhatsApp</Text>
-        </TouchableOpacity>
+        <Text style={styles.helper}>
+          {u('Comparte este código con tu acompañante para vincular su cuenta a la tuya.')}
+        </Text>
 
-        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-          <Text style={styles.skipBtnText}>Saltar este paso por ahora</Text>
-        </TouchableOpacity>
+        <View style={{ flex: 1 }} />
 
+        <StepDots total={5} active={3} />
+        <Button
+          variant="dark"
+          label={u('Compartir por WhatsApp')}
+          icon={<Share2 size={18} color={colors.white} />}
+          onPress={handleShare}
+        />
+        <TouchableOpacity style={styles.skip} onPress={goToApp} accessibilityRole="button">
+          <Text style={styles.skipText}>{u('SALTAR ESTE PASO POR AHORA')}</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#2C3D30', // Verde Bosque
-  },
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginBottom: 24,
-  },
-  title: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 28,
-    color: '#F4F1EA',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#A0AEC0',
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 24,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 },
+  title: { fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.carbon },
   codeCard: {
-    backgroundColor: 'rgba(244, 241, 234, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(244, 241, 234, 0.3)',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 40,
+    backgroundColor: colors.bosque,
+    borderRadius: radius.xl,
+    padding: 22,
+    gap: 14,
+    ...shadow.card,
   },
-  codeLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: '#F4F1EA',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  codeText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 36,
-    color: '#F4F1EA',
-    letterSpacing: 4,
-  },
-  primaryBtn: {
-    backgroundColor: '#F4F1EA', // Avena
-    flexDirection: 'row',
-    paddingVertical: 18,
-    borderRadius: 32,
+  codeLabel: { fontFamily: fonts.medium, fontSize: 12, letterSpacing: 1.5, color: 'rgba(244,241,234,0.75)' },
+  codeBox: {
+    backgroundColor: 'rgba(244,241,234,0.12)',
+    borderRadius: radius.lg,
+    paddingVertical: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    marginBottom: 24,
   },
-  primaryBtnText: {
-    color: '#2C3D30',
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  },
-  skipBtn: {
-    padding: 10,
-  },
-  skipBtnText: {
-    color: '#A0AEC0',
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  }
+  codeText: { fontFamily: fonts.display, fontSize: 32, letterSpacing: 2, color: colors.avena },
+  copy: { position: 'absolute', right: 14, bottom: 12 },
+  helper: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', lineHeight: 19 },
+  skip: { alignItems: 'center', padding: 8 },
+  skipText: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1, color: colors.mutedSoft },
 });

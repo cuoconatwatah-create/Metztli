@@ -1,181 +1,200 @@
-﻿# Seguridad y Buenas Prácticas — Metztli
+# Seguridad, Roles y Buenas Prácticas — Metztli
 
-> **Entregable de Desarrollo**: Seguridad y Buenas Prácticas  
+> **Entregable 5**: Seguridad y roles  
 > **Proyecto**: Metztli — Plataforma de Salud Femenina Integral Offline-First para la Costa Caribe de Nicaragua  
-> **Fecha de Actualización**: Septiembre 2026  
-> **Estado**: Implementado y Verificado  
+> **Estado**: Implementado y verificado con pruebas automáticas sobre PostgreSQL real  
 
 ---
 
-## 1. Visión General y Filosofía de Privacidad
+## 1. Filosofía de privacidad
 
-Metztli gestiona información altamente sensible sobre la salud sexual, reproductiva y los ciclos biológicos de mujeres y personas menstruantes, muchas de ellas residentes en comunidades rurales de la Costa Caribe de Nicaragua (Bluefields, Bilwi/Puerto Cabezas, Waspam, etc.).
+Metztli maneja información muy sensible (ciclos, embarazo, síntomas) de mujeres que viven en comunidades pequeñas donde el estigma es real. Por eso aplica **Privacidad desde el Diseño y por Defecto**:
 
-La seguridad en Metztli no es un añadido secundario, sino el núcleo de su arquitectura bajo el principio de **Privacidad desde el Diseño y por Defecto (Privacy by Design and by Default)**.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│               ARQUITECTURA DE PRIVACIDAD EN Metztli                 │
-└────────────────────────────────────────────────────────────────────────┘
-  Dispositivo de la Usuaria (100% Local y Privado)
-  ┌────────────────────────────────────────────────────────────────────┐
-  │  • Ciclos Menstruales (fechas, duración, predicciones)             │
-  │  • Registro Diario de Síntomas (flujo, cólicos, estrés, ánimo)     │
-  │  • Contador de Pataditas Fetales                                   │
-  │  • Notas Clínicas Personales                                       │
-  │                                                                    │
-  │   Almacenado localmente en SQLite (metztli.db)                     │
-  │   → NUNCA se transmiten a la nube sin consentimiento explícito.    │
-  └────────────────────────────────────────────────────────────────────┘
-                                   │
-              Capa de Transporte Cifrado (TLS 1.3 / HTTPS)
-                                   ▼
-  Nube Supabase (Solo Datos Públicos y Anónimos Comunitarios)
-  ┌────────────────────────────────────────────────────────────────────┐
-  │  • Foro Comunitario Anónimo (sin nombres reales, alias aleatorio)   │
-  │  • Directorio de Emergencias (datos institucionales públicos)       │
-  │  • Desmitificador Intercultural (contenido educativo verificado)    │
-  │                                                                    │
-  │   Protegido mediante Row Level Security (RLS) en PostgreSQL        │
-  └────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph T["📱 Teléfono — datos íntimos (fuente principal)"]
+        D1[Ciclos y registros diarios]
+        D2[Embarazo, controles y pataditas]
+        D3[Notas personales]
+    end
+    subgraph N["☁️ Supabase"]
+        direction TB
+        P1[Datos públicos: foro anónimo · mitos · directorio]
+        P2[Respaldo OPCIONAL de datos íntimos<br/>cada fila ligada a su dueña por RLS]
+        P3[Roles y bitácora de auditoría]
+    end
+    T -- "siempre (anónimo)" --> P1
+    T -. "solo si la usuaria activa<br/>«Respaldar mis datos»" .-> P2
+    ADM[Administradora] --> P1
+    ADM --> P3
+    AUD[Auditora] -->|solo lectura| P3
+    ADM -. "sin acceso" .-x P2
+    AUD -. "sin acceso" .-x P2
 ```
 
----
-
-## 2. Protección de Datos Sensibles de Salud (Offline-First)
-
-### 2.1 Aislamiento de Datos Médicos en Dispositivo
-Los módulos más íntimos de la aplicación operan de manera 100% offline:
-- **Brújula Lunar (`user_cycle_logs` / `cycles` / `daily_logs`)**: Los síntomas de dolor, variaciones de flujo menstrual, estados emocionales y notas quedan restringidos a la base de datos local SQLite (`metztli.db`).
-- **Seguimiento Obstétrico (`kick_counter_logs` / `user_profile`)**: Los registros de movimientos fetales y fecha de última menstruación (FUM / LMP) se procesan directamente en el dispositivo móvil sin telemetría intrusiva.
-- **Soberanía del Dato**: Si la usuaria desinstala la aplicación o borra los datos de la app, su información íntima es purgada por completo del almacenamiento del dispositivo.
-
-### 2.2 Sincronización Opcional e Idempotente
-Cuando se interactúa con el backend Supabase (por ejemplo, en el foro de dudas comunitarias o sincronización de ciclos si la usuaria inicia sesión):
-- Cada registro cuenta con un `local_uuid` generado en el cliente mediante identificadores únicos universales.
-- El servidor aplica restricciones de unicidad (`UNIQUE NOT NULL`), evitando registros duplicados ante reintentos de conexión intermitente.
-- El campo `is_synced` en SQLite marca el estado localmente, evitando transferencias redundantes de datos.
+- Los datos íntimos **nacen y viven en SQLite**, en el teléfono.
+- El respaldo en la nube es **opt-in** (interruptor en Perfil, apagado por defecto), se puede **borrar** desde la misma pantalla y exige tener sesión.
+- **Ningún rol** (ni administradora ni auditora) puede leer datos de salud de otra persona.
 
 ---
 
-## 3. Almacenamiento Criptográfico Seguro (`expo-secure-store`)
+## 2. Protección de datos de salud
 
-A diferencia del uso inseguro de `localStorage` o `AsyncStorage` en texto plano (vulnerable en dispositivos con root o jailbreak), Metztli utiliza **`expo-secure-store`** para toda información de credenciales y configuración sensible:
+### 2.1 En el dispositivo
+- `daily_logs`, `cycles`, `pregnancies`, `prenatal_checkups` y `kick_counter_logs` se guardan solo en SQLite (`metztli.db`). Esquema normalizado a 2FN con restricciones `CHECK` (rangos de peso, presión, escalas) y claves foráneas activas.
+- Si la usuaria desinstala la app, esos datos desaparecen del teléfono.
 
-- **Android**: Los datos se cifran utilizando **Android Keystore**, garantizando que las llaves criptográficas residan en el elemento seguro del hardware (TEE - Trusted Execution Environment).
-- **iOS**: Los datos se almacenan en el **Keychain** del sistema operativo con atributos de accesibilidad restringida.
+### 2.2 Sincronización e idempotencia
+- Foro y mitos se sincronizan siempre; los envíos usan `local_uuid` y la restricción `UNIQUE` evita duplicados ante reintentos (código `23505` = "ya existía").
+- El respaldo de salud usa claves naturales (`user_id + fecha`, `user_id + FUM`) para ser idempotente y **no pisa** datos locales al restaurar.
+- La moderación se propaga: lo que la administradora borra en la nube sale también de los teléfonos al sincronizar.
 
-### Componentes protegidos con SecureStore:
-1. **Tokens de Sesión Supabase**: Tokens JWT de acceso y de refresco gestionados por el adaptador seguro en `frontend/src/lib/supabase.ts`.
-2. **Alias del Foro Comunitario**: Se resguarda la identidad asignada a la usuaria (`forum_alias`) sin asociarla a su nombre real o correo electrónico.
-3. **Preferencia de Idioma y Modo**: Almacenados de forma persistente y aislada.
+---
+
+## 3. Almacenamiento seguro en el dispositivo (`expo-secure-store`)
+
+| Dato | Dónde se guarda |
+| :--- | :--- |
+| Sesión de Supabase (tokens) | `SecureStore` (Keystore/Keychain) mediante un adaptador en `src/lib/supabase.ts` |
+| Alias anónimo del foro | `SecureStore` |
+| Idioma, etapa activa, interruptor de respaldo, copia del rol (solo para pintar la interfaz sin conexión) | `SecureStore` (en web, `localStorage`) |
+
+> La copia local del rol **no concede permisos**: cada acción se valida en la base de datos.
+
+---
+
+## 4. Anonimato en el foro comunitario
+
+1. Alias automáticos (`Luna_Bluefields_12`): sin nombres, cédula ni teléfono.
+2. **No se envía `user_id`** al publicar: el foro es anónimo incluso para quien tiene cuenta.
+3. Sin IP, modelo de dispositivo ni ubicación en `forum_posts`.
+4. Endurecido en la base: textos acotados, categorías válidas y nadie puede publicar a nombre de otra (`user_id` solo `NULL` o propio).
+
+---
+
+## 5. Roles y permisos (Administradora · Usuaria · Auditora)
+
+Los roles viven en la tabla `user_roles` y se aplican **en la base de datos** (RLS + funciones `SECURITY DEFINER`), no solo en la interfaz. Código: [`20240101000006_roles_audit.sql`](../backend/supabase/migrations/20240101000006_roles_audit.sql).
+
+### 5.1 Matriz de permisos
+
+| Capacidad | Sin sesión | Usuaria | Administradora | Auditora |
+| :--- | :---: | :---: | :---: | :---: |
+| Leer foro, mitos y directorio | ✅ | ✅ | ✅ | ✅ |
+| Publicar en el foro (anónimo) | ✅ | ✅ | ✅ | ✅ |
+| Leer / escribir **sus propios** datos de salud | — | ✅ | ✅ | ✅ |
+| Leer datos de salud **de otras personas** | ❌ | ❌ | ❌ | ❌ |
+| Ver su propio rol | — | ✅ | ✅ | ✅ |
+| Ver los roles de todas las cuentas | ❌ | ❌ | ✅ | ✅ |
+| **Cambiar roles** (`set_user_role`) | ❌ | ❌ | ✅ | ❌ |
+| Listar cuentas con correo enmascarado | ❌ | ❌ | ✅ | ❌ |
+| **Moderar el foro** (borrar publicaciones) | ❌ | ❌ | ✅ | ❌ |
+| **Gestionar mitos y directorio** | ❌ | ❌ | ✅ | ❌ |
+| Ver la **bitácora** (`audit_log`) | ❌ | ❌ | ✅ | ✅ |
+| Ver **estadísticas agregadas** (`audit_stats`) | ❌ | ❌ | ✅ | ✅ |
+| Modificar o borrar la bitácora | ❌ | ❌ | ❌ | ❌ |
+
+### 5.2 Cómo se hace cumplir
+
+```mermaid
+sequenceDiagram
+    participant App as App (Panel de administración)
+    participant API as Supabase API
+    participant DB as PostgreSQL (RLS + funciones)
+    App->>API: rpc set_user_role(target, 'auditor')
+    API->>DB: auth.uid() = JWT de la sesión
+    DB->>DB: my_role() = 'admin'? y no se quita el rol a sí misma
+    alt es administradora
+        DB->>DB: UPDATE user_roles
+        DB->>DB: trigger log_audit() → INSERT audit_log (quién, qué, cuándo)
+        DB-->>App: OK
+    else no lo es
+        DB-->>App: error 42501 «Solo una administradora puede cambiar roles»
+    end
+```
+
+- **`my_role()`** devuelve `anon`, `user`, `admin` o `auditor` según la sesión; las políticas la usan.
+- **Nadie escribe en `user_roles` ni `audit_log` directamente** (privilegios `INSERT/UPDATE/DELETE` revocados): solo `set_user_role()` y los *triggers*.
+- **Primera administradora**: no puede nombrarse desde la app; la dueña del proyecto ejecuta [`seed_roles_demo.sql`](../backend/supabase/seed_roles_demo.sql) una vez.
+- **Protecciones**: una administradora no puede quitarse a sí misma el rol; los roles válidos están limitados con `CHECK`; la bitácora tiene un *trigger* que rechaza `UPDATE` y `DELETE` incluso para la dueña del proyecto.
+- **Auditoría**: se registran los cambios de rol, la moderación del foro y las altas/cambios/bajas de mitos y directorio, con `actor_id`, `actor_role`, acción, tabla y un resumen sin datos personales.
+- **En la app**: `RoleContext` lee el rol; Perfil muestra "Tu rol" y los paneles que correspondan ([`AdminPanelScreen`](../frontend/src/screens/AdminPanelScreen.tsx), [`AuditPanelScreen`](../frontend/src/screens/AuditPanelScreen.tsx)). Si el rol no alcanza, la pantalla muestra "Acceso restringido" y, aunque se forzara, la base rechaza la acción.
+
+### 5.3 Pruebas automáticas
+
+`backend/tests/rls.test.mjs` aplica **todas las migraciones** sobre un PostgreSQL real en memoria (PGlite) y simula sesiones de cada rol:
+
+```bash
+cd backend
+npm install
+npm run test:rls
+```
+
+Comprueba, entre otros: que registrarse crea perfil y rol `user`; que una usuaria no cambia roles, no ve la bitácora ni modera; que la administradora cambia roles, modera y **no** lee datos íntimos; que la auditora ve bitácora y estadísticas pero **no puede** modificar; que sin sesión solo se lee y se publica en el foro; y que la bitácora es inmutable.
+
+---
+
+## 6. Políticas RLS por tabla
+
+| Tabla | Lectura | Escritura |
+| :--- | :--- | :--- |
+| `directory_contacts` | Pública | Solo administradora |
+| `myths` | Pública | Solo administradora |
+| `forum_posts` | Pública | Insertar: cualquiera (con `user_id` nulo o propio); borrar: solo administradora |
+| `symptoms` | Pública | Solo desde migraciones |
+| `user_cycle_logs`, `cycles`, `daily_logs`, `pregnancies`, `profiles` | Solo la dueña (`auth.uid() = user_id`) | Solo la dueña |
+| `daily_log_symptoms`, `daily_log_habits`, `prenatal_checkups`, `kick_sessions` | Solo la dueña del registro padre (`EXISTS` sobre la tabla padre) | Solo la dueña |
+| `user_roles` | Cada quien su fila; administradora y auditora todas | Solo mediante `set_user_role()` |
+| `audit_log` | Administradora y auditora | Solo *triggers* (inmutable) |
+
+---
+
+## 7. Mitigación de inyección SQL
+
+En SQLite todas las consultas usan **parámetros** (`?`); el SQL dinámico solo compone nombres de columna tomados de listas blancas:
 
 ```typescript
-// Implementación en frontend/src/lib/supabase.ts
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
+// ✅ Implementado (src/db/schema.ts)
+await db.runAsync(
+  `INSERT INTO daily_logs (${COLUMNS.join(', ')}) VALUES (${COLUMNS.map(() => '?').join(', ')})
+   ON CONFLICT(log_date) DO UPDATE SET ${updates}`,
+  values
+);
+// ❌ Evitado: interpolar valores del usuario en el SQL
 ```
 
----
-
-## 4. Anonimato y Prevención de Rastreo en el Foro Comunitario
-
-En comunidades pequeñas de la Costa Caribe, el estigma social en torno a la salud sexual y reproductiva puede inhibir la búsqueda de orientación. Por ello, el módulo **Tribu / Foro Comunitario** implementa:
-
-1. **Generación Automática de Pseudónimos**: La aplicación asigna automáticamente nombres anónimos poéticos y seguros (ej. *Luna Creciente*, *Flor de Mayo*, *Mangle Verde*) sin requerir nombres reales, cédula ni números telefónicos.
-2. **Desvinculación de PII (Personally Identifiable Information)**: Ningún post en `forum_posts` almacena dirección IP, modelo de dispositivo ni ubicación GPS exacta.
-3. **Agrupación Temática Inclusiva**: Los temas se clasifican por categorías generales (`ciclo`, `embarazo`, `menopausia`, `general`) para facilitar la consulta sin exponer información identitaria.
+En Supabase, el cliente usa PostgREST (consultas parametrizadas) y las funciones validan sus argumentos (`new_role` solo admite tres valores).
 
 ---
 
-## 5. Seguridad en la Capa de Datos (Supabase PostgreSQL RLS)
+## 8. Secretos y variables de entorno
 
-Todas las tablas en PostgreSQL tienen habilitado de forma estricta **Row Level Security (RLS)** en los scripts de migración (`backend/supabase/migrations/20240101000000_init.sql` y `20240101000001_myths.sql`):
-
-### Políticas Implementadas:
-
-| Tabla | RLS Habilitado | Política | Operación | Regla de Acceso | Justificación |
-| :--- | :---: | :--- | :---: | :--- | :--- |
-| `directory_contacts` | ✅ Sí | `Public Directory Read` | `SELECT` | `USING (true)` | Directorio de hospitales, centros de salud y comisarías de libre acceso público. |
-| `directory_contacts` | ✅ Sí | *Restricción de escritura* | `INSERT / UPDATE / DELETE` | Solo administradores (service_role) | Evita manipulación maliciosa de números de emergencia. |
-| `forum_posts` | ✅ Sí | `Public Forum Read` | `SELECT` | `USING (true)` | Lectura libre comunitaria de dudas y respuestas. |
-| `forum_posts` | ✅ Sí | `Insert Forum Posts` | `INSERT` | `WITH CHECK (true)` | Permite publicación anónima comunitaria sin obligar a registrar datos personales. |
-| `user_cycle_logs` | ✅ Sí | `Users can read own logs` | `SELECT` | `USING (auth.uid() = user_id)` | Solo la usuaria autenticada puede ver su historial. |
-| `user_cycle_logs` | ✅ Sí | `Users can insert own logs`| `INSERT` | `WITH CHECK (auth.uid() = user_id)` | Impide inserción a nombre de terceros. |
-| `user_cycle_logs` | ✅ Sí | `Users can update own logs`| `UPDATE` | `USING (auth.uid() = user_id)` | Impide modificación de datos de terceros. |
-| `myths` | ✅ Sí | `Public Myths Read` | `SELECT` | `USING (true)` | Mitos y realidades culturales de lectura abierta. |
+1. En la app solo viaja la **clave pública** (`EXPO_PUBLIC_SUPABASE_ANON_KEY`, formato `sb_publishable_…`) y la URL. **Nunca** la `service_role`.
+2. `.env` está en `.gitignore`; la plantilla es [`frontend/.env.example`](../frontend/.env.example).
+3. En GitHub Actions las claves públicas van como **Variables** del repositorio (ver [Despliegue](DESPLIEGUE_Y_PRESENTACION.md)).
+4. `scripts/check-supabase.mjs` comprueba contra el servidor real que un usuario anónimo no ve datos íntimos, no puede cambiar roles y no puede escribir contenido.
 
 ---
 
-## 6. Mitigación de Inyección SQL y Sanitización en SQLite
+## 9. Resiliencia y manejo de errores
 
-En la base de datos local embebida (`frontend/src/db/database.ts`), se erradica por completo la concatenación de cadenas de texto no sanitizadas. Todas las operaciones utilizan **consultas parametrizadas**:
-
-```typescript
-// ✅ BUENA PRÁCTICA (Implementada en Metztli):
-await database.runAsync(
-  'UPDATE user_profile SET current_mode = ? WHERE id = 1',
-  [mode]
-);
-
-await database.runAsync(
-  `INSERT OR REPLACE INTO daily_logs 
-    (log_date, mode, flow_level, pain_level, pregnancy_symptoms, mood, symptoms_json, notes)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  [log.log_date, log.mode, log.flow_level ?? null, log.pain_level ?? null, ...]
-);
-
-// ❌ PRÁCTICA INSEGURA (Evitada):
-// await database.runAsync(`UPDATE user_profile SET current_mode = '${mode}' WHERE id = 1`);
-```
+1. **Conectividad**: antes de sincronizar se consulta `NetInfo`; sin red la app sigue en modo local.
+2. **Errores contextuales**: las excepciones de red o base se capturan sin congelar la interfaz; las acciones de los paneles muestran el mensaje exacto de la base si no se completan.
+3. **Entorno web**: un SQLite simulado en memoria permite probar la interfaz sin romper la app.
+4. **Auxilio de emergencia sin nube**: el triage del embarazo usa el esquema `sms:` hacia la partera o Casa Materna, con **minimización de datos** (solo semana y síntoma).
+5. **Datos que no deben parecer médicos**: las alertas (presión ≥ 140/90, dolor intenso, señales de preeclampsia) orientan a acudir al centro de salud; la app no diagnostica.
 
 ---
 
-## 7. Gestión Segura de Variables de Entorno y Secretos
+## 10. Lista de verificación
 
-1. **Separación de Llaves Públicas y Secretas**:
-   - `EXPO_PUBLIC_SUPABASE_URL`: URL pública de la instancia de Supabase.
-   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Llave pública para operaciones con RLS habilitado.
-   - **NUNCA se incluye ni compila la llave `SUPABASE_SERVICE_ROLE_KEY` en la aplicación cliente**. Cualquier operación administrativa se ejecuta en entornos seguros de backend o scripts de migración aislados.
-2. **Control de Archivos en `.gitignore`**:
-   - `.env`, `.env.local` y artefactos de compilación (`dist/`, `build/`, `android/app/build/`) están excluidos del historial de control de versiones.
-3. **Disponibilidad de Plantilla Documentada**:
-   - Se provee [frontend/.env.example](file:///c:/Metzlit_2.0/frontend/.env.example) para guiar la configuración segura sin filtrar credenciales reales.
-
----
-
-## 8. Resiliencia, Conectividad y Manejo Defensivo de Errores
-
-Las redes móviles en la Costa Caribe presentan alta latencia y frecuentes caídas de señal. Metztli incorpora patrones defensivos:
-
-1. **Detección Activa de Conectividad con NetInfo**:
-   Antes de disparar cualquier petición de red hacia Supabase, `sync.ts` verifica el estado real de la conexión:
-   ```typescript
-   const state = await NetInfo.fetch();
-   if (!state.isConnected) {
-     console.log('Sin conexión a Internet. Operando en modo local.');
-     return;
-   }
-   ```
-2. **Entornos de Simulación y Pruebas Web**:
-   En entornos de navegador web (donde SQLite nativo no está disponible), se provee un controlador mock en `database.ts` para permitir pruebas de interfaz y validaciones sin provocar caídas de la aplicación (*no crashes*).
-3. **Manejo de Errores con Try/Catch Contextual**:
-   Las excepciones de red o lectura de base de datos son capturadas y registradas sin congelar la interfaz de usuario, preservando la continuidad de la experiencia.
-4. **Protocolo Seguro de Triage y Auxilio Offline (Sin Exposición Cloud)**:
-   En situaciones de emergencia obstétrica vital (hemorragias, sospecha de preeclampsia, fiebre alta), la aplicación no depende de servidores web intermedios ni APIs en la nube que puedan fallar por falta de cobertura de datos móviles. Se apoya en el protocolo estándar celular GSM `sms:` para enlazar a la partera o Casa Materna de forma directa. El mensaje aplica **minimización de datos** (únicamente reporta la semana gestacional y el síntoma de alerta, sin exponer nombres completos, cédula ni historial privado).
-
----
-
-## 9. Lista de Verificación de Cumplimiento (Checklist)
-
-- [x] **Privacy by Design**: Datos de ciclo y salud almacenados 100% en local.
-- [x] **Almacenamiento Criptográfico**: Tokens y alias gestionados por `expo-secure-store`.
-- [x] **PostgreSQL RLS Activo**: Todas las tablas en Supabase con políticas de acceso verificadas.
-- [x] **Prevención SQL Injection**: 100% de consultas SQLite parametrizadas con marcadores de posición (`?`).
-- [x] **Control de Secretos**: `.env` excluido de git y `.env.example` disponible.
-- [x] **Cero PII en Foro Comunitario**: Pseudónimos anónimos automáticos.
-- [x] **Resiliencia de Red**: Validación con NetInfo y reintentos idempotentes.
-- [x] **Canal de Auxilio de Emergencia Offline**: Enlace nativo SMS celular directo a la Casa Materna sin intermediarios cloud.
+- [x] **Privacy by Design**: datos de salud en local; respaldo opcional y borrable.
+- [x] **3 roles funcionales** (Administradora, Usuaria, Auditora) aplicados con RLS y funciones en la base.
+- [x] **Mínimo privilegio**: ningún rol lee datos de salud ajenos; la auditora es solo lectura.
+- [x] **Bitácora de auditoría inmutable** de las acciones del personal.
+- [x] **RLS activo en todas las tablas** y probado con sesiones simuladas de cada rol.
+- [x] **Sesión en `SecureStore`**; sin secretos en el repositorio.
+- [x] **Consultas parametrizadas** y validación de argumentos en funciones.
+- [x] **Foro anónimo** sin `user_id` ni PII, endurecido en la base.
+- [x] **Resiliencia de red** e idempotencia en la sincronización.
+- [x] **Auxilio SMS** offline con minimización de datos.

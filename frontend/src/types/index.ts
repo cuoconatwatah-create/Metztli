@@ -68,20 +68,62 @@ export interface Cycle {
   period_length: number;
 }
 
+/** Embarazo (la fecha probable de parto se deriva: FUM + 280 días) */
+export interface Pregnancy {
+  id: number;
+  lmp_date: string;
+  lmp_estimated: 0 | 1;
+  status: 'active' | 'ended';
+  ended_on: string | null;
+  created_at: string;
+}
+
+export type CheckupKind = 'control' | 'ecografia' | 'laboratorio' | 'otro';
+
+/** Control prenatal (cita planeada o realizada) */
+export interface PrenatalCheckup {
+  id: number;
+  local_uuid: string;
+  pregnancy_id: number;
+  checkup_date: string;
+  kind: CheckupKind;
+  place: string | null;
+  weight_kg: number | null;
+  bp_systolic: number | null;
+  bp_diastolic: number | null;
+  notes: string | null;
+  done: 0 | 1;
+}
+
+/**
+ * Registro diario (normalizado, 2FN). Los síntomas y hábitos viven en tablas
+ * hijas (daily_log_symptoms / daily_log_habits) y aquí llegan ya como listas.
+ */
 export interface DailyLog {
   id: number;
   log_date: string;
   mode: LifeStageMode;
   flow_level: FlowLevel | null;
+  flow_color: string | null;
+  flow_intensity: string | null;
+  mucus: string | null;
   pain_level: number | null;
-  pregnancy_symptoms: PregnancySymptom[] | null;
-  mood: MoodType | null;
-  symptoms_json: string[] | null;
+  mood: string | null;
+  vitality: number | null;
+  discomfort: number | null;
+  weather: string | null;
+  sleep_hours: number | null;
+  movement_min: number | null;
+  water_glasses: number | null;
   notes: string | null;
+  symptoms: string[];
+  habits: string[];
 }
 
 export interface KickCounterLog {
   id: number;
+  pregnancy_id?: number | null;
+  local_uuid?: string | null;
   session_date: string;
   kick_count: number;
   duration_minutes: number;

@@ -13,3 +13,7 @@ yarn-error.log*
 dist/
 build/
 .next/
+
+
+# Supabase CLI (temporal local)
+backend/supabase/.temp/

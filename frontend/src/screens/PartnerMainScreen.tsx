@@ -1,251 +1,137 @@
+// ─────────────────────────────────────────────────────────
+// Metztli — Vista del acompañante (red de apoyo)
+// ─────────────────────────────────────────────────────────
+
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HeartHandshake, Moon, Droplet, Coffee, BellRing, Settings } from 'lucide-react-native';
+import { Card, SectionTitle } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { useUi } from '@/i18n/ui';
 
 type PartnerState = 'normal' | 'menstruation' | 'retreat';
 
+const BANNERS: Record<PartnerState, { eyebrow: string; title: string; text: string; icon: React.ReactNode; bg: string }> = {
+  normal: {
+    eyebrow: 'ESTADO DE HOY',
+    title: 'Todo se ve bien',
+    text: 'Ana está en una fase de alta energía de su ciclo.',
+    icon: <HeartHandshake size={26} color={colors.white} />,
+    bg: colors.bosque,
+  },
+  menstruation: {
+    eyebrow: 'ESTADO DE HOY',
+    title: 'Día 2 de su ciclo',
+    text: 'Ana está en su fase menstrual. Puede tener cólicos o baja energía.',
+    icon: <Droplet size={26} color={colors.white} />,
+    bg: colors.carmin,
+  },
+  retreat: {
+    eyebrow: 'MODO RETIRO ACTIVO',
+    title: 'Necesita descanso',
+    text: 'Ana necesita descanso extra y un ambiente tranquilo hoy.',
+    icon: <Moon size={26} color={colors.white} />,
+    bg: '#111512',
+  },
+};
+
+const TIPS: Record<PartnerState, { icon: React.ReactNode; text: string }[]> = {
+  normal: [{ icon: <HeartHandshake size={20} color={colors.bosque} />, text: 'Es un gran día para salir a caminar o hacer actividades juntos.' }],
+  menstruation: [
+    { icon: <HeartHandshake size={20} color={colors.bosque} />, text: 'Un masaje suave en la espalda baja puede aliviar su dolor.' },
+    { icon: <Coffee size={20} color={colors.bosque} />, text: 'Asegúrate de que tenga agua a la mano. La hidratación reduce la hinchazón.' },
+  ],
+  retreat: [
+    { icon: <Coffee size={20} color={colors.carmin} />, text: 'Prepara una infusión tibia de manzanilla o canela para ayudarle a relajarse.' },
+    { icon: <BellRing size={20} color={colors.carmin} />, text: 'Asume las tareas de la casa, evita ruidos fuertes y pregúntale si necesita una cobija o agua caliente.' },
+  ],
+};
+
+const STATE_LABELS: { value: PartnerState; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'menstruation', label: 'Menstruación' },
+  { value: 'retreat', label: 'Modo retiro' },
+];
+
 export default function PartnerMainScreen() {
+  const u = useUi();
   const navigation = useNavigation<any>();
-  // Este estado sería sincronizado por la base de datos en una app real
-  const [partnerState, setPartnerState] = useState<PartnerState>('normal');
-
-  const renderStateBanner = () => {
-    switch (partnerState) {
-      case 'retreat':
-        return (
-          <View style={[styles.banner, styles.bannerRetreat]}>
-            <Moon size={32} color="#F4F1EA" />
-            <View style={styles.bannerTextContainer}>
-              <Text style={styles.bannerTitle}>Modo Retiro Activo</Text>
-              <Text style={styles.bannerSubtitle}>Ana necesita descanso extra y un ambiente tranquilo hoy.</Text>
-            </View>
-          </View>
-        );
-      case 'menstruation':
-        return (
-          <View style={[styles.banner, styles.bannerMenstruation]}>
-            <Droplet size={32} color="#F4F1EA" />
-            <View style={styles.bannerTextContainer}>
-              <Text style={styles.bannerTitle}>Día 2 de su ciclo</Text>
-              <Text style={styles.bannerSubtitle}>Ana está en su fase menstrual. Puede tener cólicos o baja energía.</Text>
-            </View>
-          </View>
-        );
-      case 'normal':
-      default:
-        return (
-          <View style={[styles.banner, styles.bannerNormal]}>
-            <HeartHandshake size={32} color="#2C3D30" />
-            <View style={styles.bannerTextContainer}>
-              <Text style={[styles.bannerTitle, { color: '#2C3D30' }]}>Todo se ve bien</Text>
-              <Text style={[styles.bannerSubtitle, { color: '#4A5568' }]}>Ana está en una fase de alta energía de su ciclo.</Text>
-            </View>
-          </View>
-        );
-    }
-  };
-
-  const renderTips = () => {
-    switch (partnerState) {
-      case 'retreat':
-        return (
-          <>
-            <View style={styles.tipCard}>
-              <Coffee size={24} color="#8B2635" />
-              <Text style={styles.tipText}>Prepara una infusión tibia de manzanilla o canela para ayudarle a relajar el útero.</Text>
-            </View>
-            <View style={styles.tipCard}>
-              <BellRing size={24} color="#8B2635" />
-              <Text style={styles.tipText}>Asume las tareas de la casa. Evita hacer ruidos fuertes y pregúntale si necesita una cobija o bolsa de agua caliente.</Text>
-            </View>
-          </>
-        );
-      case 'menstruation':
-        return (
-          <>
-            <View style={styles.tipCard}>
-              <HeartHandshake size={24} color="#2C3D30" />
-              <Text style={styles.tipText}>Un masaje suave en la espalda baja puede aliviar su dolor significativamente.</Text>
-            </View>
-            <View style={styles.tipCard}>
-              <Coffee size={24} color="#2C3D30" />
-              <Text style={styles.tipText}>Asegúrate de que tenga agua a la mano. La hidratación reduce la hinchazón.</Text>
-            </View>
-          </>
-        );
-      case 'normal':
-      default:
-        return (
-          <>
-            <View style={styles.tipCard}>
-              <HeartHandshake size={24} color="#2C3D30" />
-              <Text style={styles.tipText}>Es un gran día para salir a caminar o hacer actividades juntos.</Text>
-            </View>
-          </>
-        );
-    }
-  };
+  // En una app real este estado llegaría sincronizado desde la cuenta vinculada.
+  const [state, setState] = useState<PartnerState>('normal');
+  const banner = BANNERS[state];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Tribu</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Welcome')}>
-          <Settings size={24} color="#8B2635" />
-        </TouchableOpacity>
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.top}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.eyebrow}>{u('METZTLI · ACOMPAÑANTE')}</Text>
+            <Text style={styles.title}>{u('Bienvenido/a a la red de apoyo')}</Text>
+            <Text style={styles.muted}>{u('Estás acompañando a Ana')}</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Welcome')} accessibilityLabel={u('Salir de la vista de acompañante')} accessibilityRole="button">
+            <Settings size={22} color={colors.carmin} />
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {renderStateBanner()}
-
-        <Text style={styles.sectionTitle}>Sugerencias de Apoyo</Text>
-        {renderTips()}
-
-        {/* Herramienta de Desarrollo/Simulación Oculta en UI */}
-        <View style={styles.devTools}>
-          <Text style={styles.devToolsTitle}>Simulador de Estados (Solo Demo)</Text>
-          <View style={styles.devButtons}>
-            <TouchableOpacity style={styles.devBtn} onPress={() => setPartnerState('normal')}>
-              <Text style={styles.devBtnText}>Normal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.devBtn} onPress={() => setPartnerState('menstruation')}>
-              <Text style={styles.devBtnText}>Menstruación</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.devBtn, { backgroundColor: '#111512' }]} onPress={() => setPartnerState('retreat')}>
-              <Text style={[styles.devBtnText, { color: 'white' }]}>Modo Retiro</Text>
-            </TouchableOpacity>
+        <View style={[styles.banner, { backgroundColor: banner.bg }]}>
+          <View style={styles.bannerIcon}>{banner.icon}</View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerEyebrow}>{banner.eyebrow}</Text>
+            <Text style={styles.bannerTitle}>{banner.title}</Text>
+            <Text style={styles.bannerText}>{banner.text}</Text>
           </View>
         </View>
 
+        <SectionTitle>{u('Recomendaciones para ti esta semana')}</SectionTitle>
+        {TIPS[state].map((tip) => (
+          <Card key={tip.text} style={styles.tip}>
+            <View style={styles.tipIcon}>{tip.icon}</View>
+            <Text style={styles.tipText}>{tip.text}</Text>
+          </Card>
+        ))}
+
+        <View style={styles.demo}>
+          <Text style={styles.demoTitle}>{u('Simulador de estados (solo demo)')}</Text>
+          <View style={styles.demoRow}>
+            {STATE_LABELS.map((s) => (
+              <TouchableOpacity
+                key={s.value}
+                style={[styles.demoBtn, state === s.value && styles.demoBtnActive]}
+                onPress={() => setState(s.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: state === s.value }}
+              >
+                <Text style={[styles.demoText, state === s.value && { color: colors.white }]}>{u(s.label)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F4F1EA',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E0D8',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontFamily: 'Inter-SemiBold',
-    color: '#8B2635',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 60,
-  },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  bannerRetreat: {
-    backgroundColor: '#111512',
-  },
-  bannerMenstruation: {
-    backgroundColor: '#8B2635',
-  },
-  bannerNormal: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E0D8',
-  },
-  bannerTextContainer: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    color: '#F4F1EA',
-    marginBottom: 4,
-  },
-  bannerSubtitle: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#E2E8F0',
-    lineHeight: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    color: '#1A1A1A',
-    marginBottom: 16,
-  },
-  tipCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#8B2635',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  tipText: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 15,
-    fontFamily: 'Inter-Medium',
-    color: '#4A5568',
-    lineHeight: 22,
-  },
-  devTools: {
-    marginTop: 40,
-    padding: 16,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 12,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: '#A0AEC0',
-  },
-  devToolsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4A5568',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  devButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  devBtn: {
-    flex: 1,
-    backgroundColor: '#CBD5E0',
-    padding: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  devBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2D3748',
-  }
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  scroll: { padding: 20, gap: 16, paddingBottom: 40 },
+  top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  eyebrow: { fontFamily: fonts.semibold, fontSize: 10, letterSpacing: 1.2, color: colors.carmin },
+  title: { fontFamily: fonts.display, fontSize: 24, lineHeight: 28, color: colors.carbon, marginTop: 4 },
+  muted: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 4 },
+  banner: { flexDirection: 'row', gap: 14, alignItems: 'center', borderRadius: radius.xl, padding: 20 },
+  bannerIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  bannerEyebrow: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: 'rgba(255,255,255,0.7)' },
+  bannerTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.white, marginTop: 2 },
+  bannerText: { fontFamily: fonts.regular, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 4, lineHeight: 17 },
+  tip: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tipIcon: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.avena, alignItems: 'center', justifyContent: 'center' },
+  tipText: { flex: 1, fontFamily: fonts.regular, fontSize: 13, lineHeight: 19, color: colors.carbon },
+  demo: { gap: 8, padding: 14, borderRadius: radius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.disabled },
+  demoTitle: { fontFamily: fonts.semibold, fontSize: 10, letterSpacing: 0.8, color: colors.mutedSoft },
+  demoRow: { flexDirection: 'row', gap: 8 },
+  demoBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.white },
+  demoBtnActive: { backgroundColor: colors.carmin },
+  demoText: { fontFamily: fonts.medium, fontSize: 11, color: colors.carbon },
 });

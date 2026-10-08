@@ -24,7 +24,7 @@ export default function ForumScreen() {
   const [alias, setAlias] = useState('Anónimo');
   const [activeCategory, setActiveCategory] = useState<ForumCategory>('ciclo_salud');
   
-  const { isConnected, pendingCount, syncPendingPosts } = useSyncQueue();
+  const { isConnected, pendingCount, syncPendingPosts, lastSyncAt } = useSyncQueue();
 
   // Load alias and posts on mount
   useEffect(() => {
@@ -45,6 +45,12 @@ export default function ForumScreen() {
     };
     initializeForum();
   }, [activeCategory]);
+
+  // Al terminar una sincronización, se vuelve a leer la lista local (ya con lo nuevo de la comunidad)
+  useEffect(() => {
+    if (lastSyncAt) loadPosts(activeCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastSyncAt]);
 
   const loadPosts = async (cat: ForumCategory) => {
     const loadedPosts = await getForumPosts(cat);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Star, Check, Droplet, Activity, Wind } from 'lucide-react-native';
-import { getDailyLog, addDailyLog, getUserProfile } from '@/db/database';
+import { loadDay, saveDay, localISODate } from '@/lib/dailyLog';
 
 interface MicroHabit {
   id: string;
@@ -17,25 +17,11 @@ const HABITS: MicroHabit[] = [
 
 export default function HealthStar() {
   const [completedHabits, setCompletedHabits] = useState<string[]>([]);
-  const [currentMode, setCurrentMode] = useState('cycle');
 
   useEffect(() => {
     const loadHabits = async () => {
-      const profile = await getUserProfile();
-      if (profile) setCurrentMode(profile.current_mode);
-
-      const today = new Date().toISOString().split('T')[0];
-      const todayLog = await getDailyLog(today);
-      if (todayLog && todayLog.notes) {
-        try {
-          const habits = JSON.parse(todayLog.notes);
-          if (Array.isArray(habits)) {
-            setCompletedHabits(habits);
-          }
-        } catch (e) {
-          // not valid json in notes
-        }
-      }
+      const today = await loadDay(localISODate());
+      setCompletedHabits(today.habits);
     };
     loadHabits();
   }, []);
@@ -49,17 +35,7 @@ export default function HealthStar() {
     }
     setCompletedHabits(newHabits);
 
-    const today = new Date().toISOString().split('T')[0];
-    await addDailyLog({
-      log_date: today,
-      mode: currentMode as any,
-      flow_level: null,
-      pain_level: null,
-      pregnancy_symptoms: null,
-      mood: null,
-      symptoms_json: null,
-      notes: JSON.stringify(newHabits),
-    });
+    await saveDay({ habits: newHabits });
   };
 
   return (

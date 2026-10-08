@@ -9,11 +9,14 @@ import * as Localization from 'expo-localization';
 import es from './locales/es.json';
 import miskitu from './locales/miskitu.json';
 import creole from './locales/creole.json';
+import uiCreole from './locales/ui.creole';
+import uiMiskitu from './locales/ui.miskitu';
+import { saveLanguage } from './storage';
 
 const resources = {
   es: { translation: es },
-  miskitu: { translation: miskitu },
-  creole: { translation: creole },
+  miskitu: { translation: miskitu, ui: uiMiskitu },
+  creole: { translation: creole, ui: uiCreole },
 };
 
 /**
@@ -38,6 +41,11 @@ i18n.use(initReactI18next).init({
     escapeValue: false,
   },
   compatibilityJSON: 'v3',
+});
+
+// Recordar la última elección de idioma (se restaura al abrir la app, ver App.tsx)
+i18n.on('languageChanged', (lng) => {
+  saveLanguage(lng);
 });
 
 export default i18n;

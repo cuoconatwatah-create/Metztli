@@ -1,14 +1,26 @@
 name: Build Android APK
 
+# Compila el APK en la nube. Se ejecuta al subir a main, al crear una etiqueta v* (publica
+# además un Release con el APK para descargarlo con un enlace fijo) o a mano desde GitHub.
 on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite ejecutarlo manualmente desde GitHub
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write # solo para publicar el Release en las etiquetas v*
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Variables públicas del proyecto de Supabase (Settings → Secrets and variables → Actions → Variables).
+      # Sin ellas el APK se genera, pero queda sin conexión a la nube.
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,7 +28,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Setup Java (for Android build)
         uses: actions/setup-java@v4
@@ -24,9 +38,19 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Avisar si falta la conexión a Supabase
+        run: |
+          if [ -z "$EXPO_PUBLIC_SUPABASE_URL" ] || [ -z "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Faltan las variables EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY: el APK funcionará, pero sin la nube."
+          fi
+
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install
+
+      - name: Verificar tipos (TypeScript)
+        working-directory: ./frontend
+        run: npm run ts:check
 
       - name: Expo Prebuild (Generate Android Project)
         working-directory: ./frontend
@@ -36,8 +60,21 @@ jobs:
         working-directory: ./frontend/android
         run: ./gradlew assembleRelease
 
+      - name: Nombrar el APK con la versión
+        run: |
+          VERSION=$(node -p "require('./frontend/package.json').version")
+          cp frontend/android/app/build/outputs/apk/release/app-release.apk "Metztli-${VERSION}.apk"
+          echo "APK_FILE=Metztli-${VERSION}.apk" >> "$GITHUB_ENV"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Metztli-App-APK
-          path: frontend/android/app/build/outputs/apk/release/app-release.apk
+          path: ${{ env.APK_FILE }}
+
+      - name: Publicar Release (solo en etiquetas v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.APK_FILE }}
+          generate_release_notes: true

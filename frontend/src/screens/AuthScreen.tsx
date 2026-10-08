@@ -1,189 +1,184 @@
-import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, 
-  SafeAreaView, ActivityIndicator, KeyboardAvoidingView, 
-  Platform, ScrollView, LayoutAnimation, UIManager 
-} from 'react-native';
-import { supabase } from '@/lib/supabase';
-import { useNavigation } from '@react-navigation/native';
-import { Shield } from 'lucide-react-native';
+// ─────────────────────────────────────────────────────────
+// Metztli — Perfil / Inicio de sesión (onboarding 3 del prototipo)
+// ─────────────────────────────────────────────────────────
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  SafeAreaView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  LayoutAnimation,
+  UIManager,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Lock } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase';
+import { restoreHealthBackup } from '@/db/cloud';
+import { setCloudBackupEnabled } from '@/lib/prefs';
+import { useStage, isStage } from '@/context/StageContext';
+import { Button, BackLink, StepDots } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { useUi } from '@/i18n/ui';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const MIN_PASSWORD = 8;
+
 export default function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(false);
+  const u = useUi();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { setStage } = useStage();
+  const [isLogin, setIsLogin] = useState(route.params?.mode === 'login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorField, setErrorField] = useState(''); // To highlight missing fields
-  
-  const navigation = useNavigation<any>();
+  const [errorField, setErrorField] = useState('');
 
   const toggleAuthMode = () => {
-    // Smooth transition between Login and Signup
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsLogin(!isLogin);
-    setErrorField(''); // Clear errors when switching modes
+    setErrorField('');
   };
 
   const handleAuth = async () => {
-    // Validation with visual feedback
-    if (!isLogin && !name) {
-      setErrorField('name');
-      return;
-    }
-    if (!email) {
-      setErrorField('email');
-      return;
-    }
-    if (!password) {
-      setErrorField('password');
-      return;
-    }
-    
+    if (!isLogin && !name.trim()) return setErrorField('name');
+    if (!contact.trim()) return setErrorField('contact');
+    if (password.length < MIN_PASSWORD) return setErrorField('password');
+
     setErrorField('');
     setLoading(true);
-    let error = null;
 
-    if (!isLogin) {
-      // Registro
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: name,
-          }
-        }
-      });
-      error = signUpError;
-    } else {
-      // Login
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      error = signInError;
-    }
+    // Correo si contiene "@"; de lo contrario se trata como teléfono.
+    const id = contact.trim();
+    const credentials = id.includes('@')
+      ? { email: id, password }
+      : { phone: id.replace(/[\s-]/g, ''), password };
+
+    const { data, error } = isLogin
+      ? await supabase.auth.signInWithPassword(credentials)
+      : await supabase.auth.signUp({ ...credentials, options: { data: { display_name: name.trim() } } });
 
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error.message);
-    } else {
-      if (!isLogin) {
-        Alert.alert('¡Santuario Creado!', 'Se ha enviado un correo de confirmación. Puedes continuar.');
-        navigation.navigate('StageSelection');
-      } else {
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+      Alert.alert(u('No pudimos continuar'), error.message);
+      return;
+    }
+    if (isLogin) {
+      // Si la usuaria ya tenía un respaldo en la nube, se recupera en este teléfono.
+      try {
+        const restored = await restoreHealthBackup();
+        if (restored && (restored.logs > 0 || restored.cycles > 0 || restored.pregnancies > 0)) {
+          await setCloudBackupEnabled(true);
+          if (isStage(restored.stage)) await setStage(restored.stage);
+        }
+      } catch (e) {
+        console.warn('No se pudo restaurar el respaldo', e);
       }
+      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+    } else {
+      // El proyecto exige confirmar el correo antes de poder iniciar sesión.
+      if (!data.session) {
+        Alert.alert(u('Revisa tu correo'), u('Te enviamos un mensaje para confirmar tu cuenta. Después podrás iniciar sesión.'));
+      }
+      navigation.navigate('StageSelection');
     }
   };
 
-  const handleSkip = () => {
-    navigation.navigate('StageSelection');
-  };
+  const fieldStyle = (key: string) => [styles.input, errorField === key && styles.inputError];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          
-          <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <Shield size={48} color="#8B2C3B" strokeWidth={1.5} />
-            </View>
-            <Text style={styles.title}>{isLogin ? 'Bienvenida de vuelta' : 'Crea tu Santuario'}</Text>
-            <Text style={styles.subtitle}>
-              {isLogin 
-                ? 'Inicia sesión para acceder a tu historial y herramientas de cuidado.'
-                : 'Protegemos tu privacidad. Registra tu cuenta para respaldar tus datos.'}
-            </Text>
+          <BackLink onPress={() => navigation.goBack()} />
+
+          <View style={{ gap: 6 }}>
+            <Text style={styles.eyebrow}>{isLogin ? u('BIENVENIDA DE VUELTA') : u('TU ESPACIO')}</Text>
+            <Text style={styles.title}>{isLogin ? u('Inicia sesión') : u('Creando tu perfil')}</Text>
           </View>
 
-          <View style={styles.formCard}>
+          <View style={{ gap: 12 }}>
             {!isLogin && (
-              <View style={[styles.inputWrapper, errorField === 'name' && styles.inputError]}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nombre o apodo"
-                  placeholderTextColor="#A0AEC0"
-                  value={name}
-                  onChangeText={(text) => { setName(text); setErrorField(''); }}
-                />
-              </View>
-            )}
-
-            <View style={[styles.inputWrapper, errorField === 'email' && styles.inputError]}>
               <TextInput
-                style={styles.input}
-                placeholder="Correo electrónico o celular"
-                placeholderTextColor="#A0AEC0"
-                value={email}
-                onChangeText={(text) => { setEmail(text); setErrorField(''); }}
-                autoCapitalize="none"
-                keyboardType="email-address"
+                style={fieldStyle('name')}
+                placeholder={u('Escribe tu nombre')}
+                placeholderTextColor={colors.placeholder}
+                value={name}
+                onChangeText={(v) => { setName(v); setErrorField(''); }}
               />
-            </View>
-            
-            <View style={[styles.inputWrapper, errorField === 'password' && styles.inputError]}>
-              <TextInput
-                style={styles.input}
-                placeholder="Contraseña"
-                placeholderTextColor="#A0AEC0"
-                value={password}
-                onChangeText={(text) => { setPassword(text); setErrorField(''); }}
-                secureTextEntry
-              />
-            </View>
-
-            {!isLogin && (
-              <Text style={styles.legalText}>
-                Tus datos son tuyos. Nunca los compartiremos con terceros.
-              </Text>
             )}
-
-            {loading ? (
-              <ActivityIndicator size="large" color="#8B2C3B" style={{ marginTop: 20 }} />
-            ) : (
-              <View style={styles.buttonGroup}>
-                <TouchableOpacity style={styles.primaryBtn} onPress={handleAuth} activeOpacity={0.8}>
-                  <Text style={styles.primaryBtnText}>
-                    {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.toggleBtn} 
-                  onPress={toggleAuthMode}
-                >
-                  <Text style={styles.toggleBtnText}>
-                    {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <TextInput
+              style={fieldStyle('contact')}
+              placeholder={u('Correo o teléfono')}
+              placeholderTextColor={colors.placeholder}
+              value={contact}
+              onChangeText={(v) => { setContact(v); setErrorField(''); }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={fieldStyle('password')}
+              placeholder={u('Contraseña mínimo {{n}} dígitos', { n: MIN_PASSWORD })}
+              placeholderTextColor={colors.placeholder}
+              value={password}
+              onChangeText={(v) => { setPassword(v); setErrorField(''); }}
+              secureTextEntry
+            />
+            {errorField === 'password' && (
+              <Text style={styles.errorText}>{u('La contraseña debe tener al menos {{n}} caracteres.', { n: MIN_PASSWORD })}</Text>
             )}
           </View>
 
           {!isLogin && (
-            <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-              <Text style={styles.skipBtnText}>Prefiero usarla sin cuenta por ahora</Text>
-            </TouchableOpacity>
+            <View style={styles.privacy}>
+              <Lock size={14} color={colors.bosque} style={{ marginTop: 2 }} />
+              <Text style={styles.privacyText}>
+                <Text style={{ fontFamily: fonts.bold }}>{u('Tus datos son 100% tuyos')}</Text>{' '}
+                {u('y están seguros. Solo los usamos para personalizar tu espacio y darte las mejores recomendaciones.')}
+              </Text>
+            </View>
           )}
 
+          <View style={{ flex: 1 }} />
+
+          {!isLogin && <StepDots total={5} active={2} />}
+
+          {loading ? (
+            <ActivityIndicator size="large" color={colors.carmin} />
+          ) : (
+            <View style={{ gap: 12 }}>
+              <Button label={isLogin ? u('INICIAR SESIÓN') : u('COMENZAR (Usuaria)')} onPress={handleAuth} />
+              <TouchableOpacity style={styles.link} onPress={toggleAuthMode} accessibilityRole="button">
+                <Text style={styles.linkText}>
+                  {isLogin ? u('¿No tienes cuenta? Regístrate') : u('¿Ya tienes cuenta? Inicia sesión')}
+                </Text>
+              </TouchableOpacity>
+              {!isLogin && (
+                <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('StageSelection')}>
+                  <Text style={[styles.linkText, { textDecorationLine: 'underline', color: colors.mutedSoft }]}>
+                    {u('Prefiero usarla sin cuenta por ahora')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -191,117 +186,33 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  iconContainer: {
-    backgroundColor: 'rgba(139, 44, 59, 0.1)',
-    padding: 16,
-    borderRadius: 30,
-    marginBottom: 16,
-  },
-  title: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 28,
-    color: '#1A1A1A',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 15,
-    color: '#4A5568',
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 16,
-  },
-  formCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', // Glassmorphism base
-    padding: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    shadowColor: '#2C3D30',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 3,
-    gap: 16,
-  },
-  inputWrapper: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Lighter glass for inputs
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  inputError: {
-    borderColor: '#8B2C3B',
-    backgroundColor: 'rgba(139, 44, 59, 0.05)',
-  },
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 24 },
+  eyebrow: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1.2, color: colors.mutedSoft },
+  title: { fontFamily: fonts.display, fontSize: 26, color: colors.carmin },
   input: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.carbon,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: colors.disabled,
+    borderRadius: radius.pill,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#1A1A1A',
+    paddingVertical: 14,
   },
-  legalText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#2C3D30',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 8,
+  inputError: { borderColor: colors.carmin, backgroundColor: colors.blush },
+  errorText: { fontFamily: fonts.regular, fontSize: 12, color: colors.carmin, marginLeft: 12 },
+  privacy: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 14,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  buttonGroup: {
-    marginTop: 8,
-    gap: 16,
-  },
-  primaryBtn: {
-    backgroundColor: '#8B2C3B', // Carmín
-    paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: 'center',
-    shadowColor: '#8B2C3B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 5,
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  toggleBtn: {
-    alignItems: 'center',
-    padding: 8,
-  },
-  toggleBtnText: {
-    color: '#8B2C3B',
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-  },
-  skipBtn: {
-    marginTop: 32,
-    alignItems: 'center',
-    padding: 10,
-  },
-  skipBtnText: {
-    color: '#4A5568',
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  }
+  privacyText: { flex: 1, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.muted },
+  link: { alignItems: 'center', padding: 6 },
+  linkText: { fontFamily: fonts.medium, fontSize: 13, color: colors.carmin },
 });

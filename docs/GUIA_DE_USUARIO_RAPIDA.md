@@ -1,78 +1,85 @@
-﻿# Guía de Usuario Rápida — Metztli
+# Guía de Usuario Rápida — Metztli
 
-> **Entregable de Desarrollo**: Guía de Usuario Rápida  
-> **Proyecto**: Metztli — Salud Femenina Integral Intercultural (Offline-First)  
-> **Propósito**: Instrucciones simples y claras para que cualquier usuaria, evaluador o promotor de salud pueda navegar y aprovechar la aplicación al máximo.  
-
----
-
-## 🌟 1. Primeros Pasos: Bienvenida y Configuración Inicial
-
-Al abrir Metztli por primera vez en tu dispositivo o navegador web:
-
-1. **Pantalla de Bienvenida**:
-   - Presiona el botón **"Comenzar"** para iniciar tu experiencia personalizada.
-2. **Selección de Idioma**:
-   - Elige tu lengua materna entre **Español**, **Miskitu** o **Creole (Kriol)**. Toda la aplicación, textos y mensajes se adaptarán de inmediato. Puedes cambiar de idioma en cualquier momento desde el selector en la esquina superior derecha.
-3. **Selección de tu Etapa de Vida**:
-   - Selecciona la etapa en la que te encuentras:
-     - 🩸 **Ciclo Menstrual**: Para registrar periodos, fertilidad y síntomas.
-     - 🤰 **Embarazo**: Para monitorear el crecimiento del bebé, signos de alarma y citas prenatales.
-     - 🌿 **Menopausia**: Para orientación en la etapa de climaterio y bienestar integral.
+> **Propósito**: instrucciones simples para que cualquier usuaria, evaluador o promotora de salud pueda navegar la aplicación.  
+> **Idiomas**: Español · Miskitu · Creole (se cambia desde la esquina de Bienvenida o desde **Perfil → Idioma**).  
 
 ---
 
-## 🩸 2. Cómo Usar la Brújula Lunar (Modo Ciclo)
+## 1. Primeros pasos
 
-1. **Visualizar tu Fase Actual**:
-   - En la pantalla principal, observa la **Rueda Lunar**. Te indicará visualmente en qué fase de tu ciclo te encuentras (Menstrual, Folicular, Ovulatoria o Lútea) sincronizada con las fases de la luna.
-2. **Registrar tus Síntomas del Día**:
-   - Toca el botón **"Registrar Síntomas"**.
-   - Selecciona la intensidad de tu flujo menstrual (Leve, Medio, Abundante).
-   - Ajusta el nivel de cólicos menstruales en la escala de 0 a 5.
-   - Marca tu nivel de estrés y estado de ánimo (Tranquila, Cansada, Feliz, Sensible).
-   - Guarda tu registro: se almacenará **100% seguro y privado en tu propio teléfono**.
+1. **Bienvenida**: toca **COMENZAR (Usuaria)**. Si ya tienes cuenta, **Iniciar sesión**. Si eres pareja o familiar, toca **ACOMPAÑANTE**.
+2. **Crear tu perfil**: escribe tu nombre, correo o teléfono y una contraseña de al menos 8 caracteres. Puedes usar la app **sin cuenta** (todo queda en tu teléfono). Si creas cuenta, confirma tu correo para poder iniciar sesión después.
+3. **Elegir tu etapa**: 🩸 Menstruación · 🤰 Embarazo · 🌿 Menopausia.
+4. **Código de acompañante**: compártelo con quien quieras que te acompañe, o salta este paso.
 
 ---
 
-## 🤰 3. Cómo Usar el Módulo de Embarazo (Semáforo y Triage)
+## 2. Cambiar de etapa en cualquier momento
 
-1. **Conocer tu Progreso Gestacional**:
-   - En la pestaña de **Embarazo**, consulta tu tiempo actual (**"Semana 28"**) y la cuenta regresiva (**"Faltan 12 sem."**).
-   - Observa la barra de progreso y la referencia visual del tamaño de tu bebé (ej. *tamaño de una berenjena*).
-2. **Escuchar el Consejo de Salud del Día**:
-   - Toca el botón verde **"Escuchar consejo de hoy"**. La aplicación leerá en voz alta y pausada la recomendación médica para tu semana actual. Vuelve a presionar si deseas pausarlo.
-3. **Monitorear el Semáforo de Estado**:
-   - 🟢 **Verde ("Todo bajo control")**: Te confirma que el desarrollo transcurre normalmente.
-   - ⚪ **Blanco ("Próximo Control Prenatal")**: Te recuerda la fecha de tu siguiente cita médica o visita a la Casa Materna.
-   - 🔴 **Rojo ("Señales de Alerta")**: Si sientes malestar grave, toca esta tarjeta roja.
-4. **Usar el Triage de Emergencias y Botón de Auxilio**:
-   - Si entraste a Señales de Alerta, verás 4 síntomas críticos (Sangrado, Fiebre alta, Dolor de cabeza con lucecitas, Bebé no se mueve).
-   - Toca el síntoma que sientes para desplegar las instrucciones inmediatas.
-   - Toca **"Escuchar qué hacer"** para oír la indicación médica.
-   - Toca **"Botón de Auxilio"** para que tu teléfono abra automáticamente un mensaje SMS listo para enviar a la partera de tu comunidad, sin necesidad de tener saldo de internet.
+Debajo del título de la pantalla de inicio verás un botón con tu etapa (por ejemplo **Menstruación ⌄**). Tócalo, elige otra etapa y la app te muestra **solo las pantallas de esa etapa**. Tus datos de las otras etapas no se pierden. También puedes hacerlo desde **Perfil → Mi etapa**.
 
 ---
 
-## 💡 4. Cómo Usar el Desmitificador Intercultural
+## 3. 🩸 Etapa Menstruación
 
-1. Ingresa a la sección de **Mitos y Realidades**.
-2. Filtra por tema (*Ciclo*, *Embarazo* o *Menopausia*).
-3. Toca cualquier tarjeta para descubrir la explicación científica y médica que desmiente tabúes populares de la Costa Caribe (ej. *"¿Bañarse durante la regla corta el sangrado?"* o *"¿La forma de la panza determina el sexo del bebé?"*).
-
----
-
-## 🚨 5. Cómo Usar el Directorio de Emergencias
-
-1. Dirígete a la pestaña **Directorio**.
-2. Filtra por tu municipio (**Bluefields**, **Bilwi / Puerto Cabezas**, **Waspam**, **Laguna de Perlas**, **Corn Island**).
-3. Encuentra los números oficiales del Hospital Regional, Centros de Salud, Policía y Ambulancias.
-4. Toca el botón de llamada para comunicarte directamente en caso de urgencia.
+- **Calendario**: el anillo te dice en qué fase estás (menstrual, folicular, ovulación o lútea). Elige el **color del flujo** y el **moco cervical** del día.
+- **Nuevo sangrado** → **Mi Ciclo**: indica el día de inicio y fin, color, intensidad y mucosidad; toca **Registrar período**. Las pestañas **Fases** y **Plantas** explican cada fase y saberes tradicionales de apoyo.
+- **Cuerpo Mente**: registra cómo te sientes, horas de sueño, movimiento y vasos de agua; en **Ejercicios** puedes escuchar respiraciones y estiramientos guiados.
+- **Modo retiro**: oscurece la pantalla para descansar y avisa a tu red de apoyo.
 
 ---
 
-## 🤝 6. Cómo Vincular a tu Pareja o Red de Apoyo (Modo Tribu)
+## 4. 🤰 Etapa Embarazo
 
-1. En tu perfil, genera tu **Código de Tribu**.
-2. Pídele a tu pareja o familiar que descargue la aplicación y seleccione **"Modo Acompañante"**.
-3. Al ingresar tu código, ellos tendrán acceso a un panel educativo adaptado a tu etapa actual, con consejos de empatía, nutrición y cuidados para acompañarte mejor.
+1. **Primera vez**: la app te pide una fecha. Elige *"Sé mi FUM"* (primer día de tu última menstruación) o *"Sé mi fecha de parto"* y ajusta día, mes y año con los botones **−** / **+**. Toca **Guardar**.
+2. **Inicio**: ves tu **semana**, tu trimestre, el progreso, el **tamaño de tu bebé** y tu **próximo control**.
+3. **Controles** (segunda pestaña): toca **Agendar o registrar un control**, elige el tipo (control, ecografía, laboratorio), la fecha y el lugar. Si ya se hizo, activa *Ya se realizó* y anota peso y presión. Si la presión es de **140/90 o más**, la app te avisa que debes acudir al centro de salud.
+4. **Contador de pataditas**, **Desarrollo semana a semana** y **Señales de alarma** están en el inicio.
+5. **Triage y auxilio por SMS**: si sientes sangrado, fiebre alta, dolor de cabeza fuerte con luces o el bebé no se mueve, toca el síntoma, escucha qué hacer y usa el **Botón de auxilio**: se abre un SMS listo para enviar a tu partera, sin necesitar internet.
+6. Si tu embarazo termina: **Mi embarazo terminó**. Tus controles y pataditas quedan como historial.
+
+---
+
+## 5. 🌿 Etapa Menopausia
+
+En **Inicio** marca lo que sientes hoy (bochornos, insomnio, cansancio, ánimo) y se guarda en tu historial. Desde ahí accedes a *"¿Cómo habitas tu día?"*, al artículo *Habitar el cambio* y al **Desmitificador**.
+
+---
+
+## 6. El botón **+** (¿Cómo habitas tu día?)
+
+Disponible en todas las etapas. Indica tu **vitalidad**, tu **incomodidad**, el **clima emocional** y lo que notas (las opciones cambian según tu etapa). Toca **Traducir mi día** y la app te da un consejo. Si tus señales son preocupantes, te indica ir al centro de salud o ver las señales de alarma.
+
+---
+
+## 7. 💡 Aprendizaje y Desmitificador
+
+- **Aprendizaje**: artículos de tu etapa (nutrición, salud mental, higiene, sexualidad). Toca el botón de audio para escucharlos. *"Mostrando contenido de tu etapa · ver todo"* cambia el filtro.
+- **Desmitificador** (*Ver todos*): toca un mito para ver la verdad. En los mitos con grabación, toca **Escuchar el mito en Mískitu** y **Escuchar la verdad en Mískitu**.
+- **Historias que no sostienen**: cuenta de forma anónima un mito que escuchaste.
+
+---
+
+## 8. Perfil, historial y respaldo
+
+- **Resumen e Historial**: días registrados, promedio de sueño y agua, e **índice de bienestar** de los últimos 7 días. Con **Compartir** envías el resumen.
+- **Respaldar mis datos en la nube** (apagado por defecto): solo si tienes cuenta. Guarda tus registros, ciclos y embarazo en tu cuenta; nadie más puede verlos. Puedes desactivarlo y **borrar el respaldo** cuando quieras.
+- **Tribu comunitaria**: foro anónimo. Funciona sin internet y se sincroniza después.
+- **Directorio de emergencias**: números de hospitales, centros de salud, policía y ambulancias por municipio, con llamada de un toque.
+
+---
+
+## 9. Roles (para el personal)
+
+Quien tenga una cuenta de **Administradora** o **Auditora** verá en **Perfil** el rol y su panel:
+
+- **Administradora → Panel de administración**: cambiar roles de las cuentas, eliminar publicaciones del foro y agregar o quitar mitos.
+- **Administradora o Auditora → Panel de auditoría**: estadísticas generales y la bitácora de acciones del personal (solo lectura).
+
+Por privacidad, **ningún panel muestra datos de salud de nadie**.
+
+---
+
+## 10. Modo acompañante
+
+Quien acompaña elige **ACOMPAÑANTE** en la Bienvenida, ingresa el código y accede a un panel con consejos de apoyo según el estado de la persona.

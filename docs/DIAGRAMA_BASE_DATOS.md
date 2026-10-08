@@ -43,13 +43,81 @@ erDiagram
     DAILY_LOGS {
         int id PK "Autoincrement"
         string log_date UK "Fecha del registro (YYYY-MM-DD)"
-        string mode "Etapa activa"
-        string flow_level "light | medium | heavy"
+        string mode "cycle | pregnancy | menopause"
+        string flow_level "none | spotting | medium | heavy"
+        string flow_color "rosado | rojo_brillante | rojo_oscuro | cafe"
+        string flow_intensity "leve | moderado | abundante | muy_abundante"
+        string mucus "seca | cremosa | acuosa | elastica"
         int pain_level "Escala 0-5"
-        string pregnancy_symptoms "JSON array de sintomas"
-        string mood "Estado animico"
-        string symptoms_json "JSON detallado"
+        string mood "feliz | bien | triste | irritada | cansada"
+        int vitality "1-5"
+        int discomfort "1-5"
+        string weather "lluvia | nublado | sol"
+        real sleep_hours "0-24"
+        int movement_min ">= 0"
+        int water_glasses ">= 0"
         string notes "Notas privadas de la usuaria"
+    }
+
+    SYMPTOMS {
+        string code PK "cramps, nausea, hotFlashes..."
+        string label_key "Clave de traduccion"
+    }
+
+    DAILY_LOG_SYMPTOMS {
+        int daily_log_id PK,FK "Parte de la clave compuesta"
+        string symptom_code PK,FK "Parte de la clave compuesta"
+    }
+
+    DAILY_LOG_HABITS {
+        int daily_log_id PK,FK "Parte de la clave compuesta"
+        string habit_code PK "water, walk, breathe"
+    }
+
+    PREGNANCIES {
+        int id PK "Autoincrement"
+        string lmp_date UK "FUM (la fecha de parto = FUM + 280 dias, no se guarda)"
+        int lmp_estimated "1 si se calculo desde la fecha de parto"
+        string status "active | ended (solo uno activo)"
+        string ended_on "Fecha de termino"
+    }
+
+    PRENATAL_CHECKUPS {
+        int id PK "Autoincrement"
+        string local_uuid UK "UUID idempotente cliente"
+        int pregnancy_id FK "pregnancies.id"
+        string checkup_date "Fecha del control"
+        string kind "control | ecografia | laboratorio | otro"
+        string place "Lugar (opcional)"
+        real weight_kg "20-300"
+        int bp_systolic "50-260"
+        int bp_diastolic "30-160"
+        int done "0 = agendado, 1 = realizado"
+    }
+
+    PROFILES {
+        uuid user_id PK "auth.users (solo Supabase)"
+        string display_name "Nombre"
+        string current_stage "cycle | pregnancy | menopause"
+        string language "es | miskitu | creole"
+    }
+
+    USER_ROLES {
+        uuid user_id PK "auth.users (solo Supabase)"
+        string role "admin | user | auditor"
+        uuid assigned_by FK "Quien asigno el rol"
+        timestamp assigned_at "Fecha de asignacion"
+    }
+
+    AUDIT_LOG {
+        int id PK "Autoincrement (solo Supabase)"
+        uuid actor_id "Quien hizo la accion"
+        string actor_role "Rol al actuar"
+        string action "INSERT | UPDATE | DELETE"
+        string target_table "Tabla afectada"
+        string target_id "Fila afectada"
+        json details "Resumen sin datos personales"
+        timestamp created_at "Fecha"
     }
 
     KICK_COUNTER_LOGS {
@@ -57,6 +125,8 @@ erDiagram
         string session_date "Fecha y hora de la sesion"
         int kick_count "Numero total de pataditas"
         int duration_minutes "Duracion en minutos"
+        int pregnancy_id FK "pregnancies.id (nullable)"
+        string local_uuid UK "UUID idempotente cliente"
     }
 
     USER_CYCLE_LOGS {
@@ -108,7 +178,13 @@ erDiagram
 
     %% RELACIONES CONCEPTUALES
     USER_PROFILE ||--o{ DAILY_LOGS : "registra_en_etapa"
-    USER_PROFILE ||--o{ KICK_COUNTER_LOGS : "monitorea_en_embarazo"
+    DAILY_LOGS ||--o{ DAILY_LOG_SYMPTOMS : "incluye"
+    SYMPTOMS ||--o{ DAILY_LOG_SYMPTOMS : "se_registra_en"
+    DAILY_LOGS ||--o{ DAILY_LOG_HABITS : "cumple"
+    PREGNANCIES ||--o{ KICK_COUNTER_LOGS : "registra_pataditas"
+    PROFILES ||--|| USER_ROLES : "tiene_un_rol"
+    USER_ROLES ||--o{ AUDIT_LOG : "sus_acciones_quedan_en"
+    PREGNANCIES ||--o{ PRENATAL_CHECKUPS : "tiene_controles"
     USER_PROFILE ||--o{ CYCLES : "calcula_con"
     FORUM_POSTS ||--o{ DIRECTORY_CONTACTS : "apoyo_comunitario"
 ```
@@ -142,20 +218,74 @@ Almacena los intervalos entre menstruaciones para alimentar el algoritmo de pred
 
 ---
 
-### 3.3 `daily_logs` (Registro Diario de Síntomas)
-Permite a la usuaria registrar síntomas físicos, emocionales y notas clínicas día con día.
+### 3.3 `daily_logs` (Registro Diario) y tablas hijas
+Un renglón por fecha con los datos atómicos del día. Los datos multivaluados (síntomas y hábitos) viven en tablas hijas, no en columnas JSON.
 
 | Campo | Tipo SQLite | Restricciones | Descripción |
 | :--- | :--- | :--- | :--- |
-| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | ID autoincremental. |
-| `log_date` | `TEXT` | `UNIQUE NOT NULL` | Fecha del log (garantiza un único log por día). |
-| `mode` | `TEXT` | `NOT NULL` | Modo activo en el que se tomó el registro. |
-| `flow_level` | `TEXT` | Nullable | Nivel de flujo: `'spotting'`, `'light'`, `'medium'`, `'heavy'`. |
-| `pain_level` | `INTEGER` | Nullable | Escala de dolor de cólicos de 0 a 5. |
-| `pregnancy_symptoms`| `TEXT` | Nullable | Lista serializada JSON de síntomas gestacionales. |
-| `mood` | `TEXT` | Nullable | Estado de ánimo registrado (ej. `'calm'`, `'happy'`, `'tired'`). |
-| `symptoms_json`| `TEXT` | Nullable | Carga útil serializada con detalles complementarios. |
-| `notes` | `TEXT` | Nullable | Texto libre privado de la usuaria. |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | ID autoincremental (no cambia al actualizar el día). |
+| `log_date` | `TEXT` | `UNIQUE NOT NULL` | Fecha local del registro (un único registro por día). |
+| `mode` | `TEXT` | `CHECK IN ('cycle','pregnancy','menopause')` | Etapa activa al registrar. |
+| `flow_level` | `TEXT` | `CHECK IN ('none','spotting','medium','heavy')` | Nivel de flujo (modelo clínico). |
+| `flow_color`, `flow_intensity`, `mucus` | `TEXT` | Nullable | Color, intensidad y mucosidad cervical de "Mi Ciclo". |
+| `pain_level` | `INTEGER` | `CHECK BETWEEN 0 AND 5` | Dolor de cólicos. |
+| `mood` | `TEXT` | Nullable | Ánimo del día. |
+| `vitality`, `discomfort` | `INTEGER` | `CHECK BETWEEN 1 AND 5` | Escalas de "¿Cómo habitas tu día?". |
+| `weather` | `TEXT` | Nullable | Clima emocional. |
+| `sleep_hours` | `REAL` | `CHECK BETWEEN 0 AND 24` | Horas de sueño. |
+| `movement_min` | `INTEGER` | `CHECK >= 0` | Minutos de movimiento. |
+| `water_glasses` | `INTEGER` | `CHECK >= 0` | Vasos de agua. |
+| `notes` | `TEXT` | Nullable | Texto libre privado. |
+
+**`symptoms`** — catálogo: `code TEXT PRIMARY KEY`, `label_key TEXT NOT NULL`.
+
+**`daily_log_symptoms`** — `PRIMARY KEY (daily_log_id, symptom_code)`; `daily_log_id` → `daily_logs(id) ON DELETE CASCADE`, `symptom_code` → `symptoms(code)`.
+
+**`daily_log_habits`** — `PRIMARY KEY (daily_log_id, habit_code)`; `daily_log_id` → `daily_logs(id) ON DELETE CASCADE`.
+
+#### Normalización aplicada (hasta 2FN)
+
+| Antes (v1) | Problema | Ahora (v2) |
+| :--- | :--- | :--- |
+| `pregnancy_symptoms` (JSON) y `symptoms_json` (JSON) | Campos multivaluados: incumplen **1FN**, imposibles de consultar o validar | Filas en `daily_log_symptoms` con FK al catálogo `symptoms` |
+| Hábitos serializados dentro de `notes` | Mezcla texto libre con datos estructurados | Filas en `daily_log_habits` |
+| Sueño, agua, color del flujo… como etiquetas `clave:valor` dentro del JSON | Atributos sin tipo ni restricciones | Columnas tipadas con `CHECK` en `daily_logs` |
+| `INSERT OR REPLACE` | Borraba y recreaba el renglón (cambiaba el `id`) | `INSERT … ON CONFLICT(log_date) DO UPDATE` (el `id` se conserva) |
+
+**2FN:** todas las tablas tienen clave primaria. En las que la clave es simple (`daily_logs`, `cycles`, `symptoms`, …) no pueden existir dependencias parciales. Las dos tablas con clave compuesta (`daily_log_symptoms`, `daily_log_habits`) no guardan atributos adicionales, por lo que ningún atributo depende de solo una parte de la clave.
+
+**Migración automática v1 → v2** (`frontend/src/db/schema.ts`, se ejecuta al abrir la app y es idempotente): renombra la tabla antigua, crea el esquema nuevo, reparte los JSON en columnas y filas hijas, descarta valores fuera de rango y elimina la tabla antigua. `PRAGMA user_version = 2`.
+
+**Supabase:** `backend/supabase/migrations/20240101000002_daily_logs_normalized.sql` crea el mismo modelo (con `user_id`, `UNIQUE (user_id, log_date)` y RLS por dueña). Aún no está conectado; la clave natural `(user_id, log_date)` permitirá sincronizar sin `local_uuid`.
+
+---
+
+### 3.3b Etapas separadas: embarazo, controles y perfil (esquema v3)
+
+Cada etapa (menstruación, embarazo, menopausia) tiene sus propias pantallas (`frontend/src/navigation/StageTabs.tsx`); la etapa activa se guarda en `user_profile.current_mode` (local) y en `profiles.current_stage` (nube, solo con respaldo activado).
+
+| Tabla | Clave | Notas de normalización |
+| :--- | :--- | :--- |
+| `pregnancies` | `id` (autoincremental / uuid) | Un embarazo es una entidad propia. Antes `lmp_date` y `due_date` eran columnas sueltas de `user_profile` y nada las llenaba. Solo se guarda la FUM: la fecha probable de parto se **deriva** (FUM + 280 días), así no hay dependencia transitiva. Índice único parcial: un solo embarazo `active`. |
+| `prenatal_checkups` | `id`; `local_uuid` único | FK a `pregnancies` (`ON DELETE CASCADE`). `CHECK` en peso (20–300 kg) y presión (sistólica 50–260, diastólica 30–160). `done` distingue cita agendada de realizada. |
+| `kick_counter_logs` | `id` | Se agregan `pregnancy_id` (FK, `ON DELETE SET NULL`: las pataditas sobreviven si se borra el embarazo) y `local_uuid` para sincronizar. |
+| `profiles` (solo Supabase) | `user_id` | 1:1 con `auth.users`; un trigger lo crea al registrarse. Guarda etapa activa e idioma. |
+| `kick_sessions` (solo Supabase) | `id`; único `(pregnancy_id, local_uuid)` | Espejo de `kick_counter_logs`. |
+
+**Migración v2 → v3** (`frontend/src/db/pregnancySchema.ts`, automática e idempotente): crea las tablas, agrega las columnas de pataditas, mueve las fechas del perfil a un embarazo activo (si solo había fecha de parto, calcula la FUM y marca `lmp_estimated`), liga las pataditas existentes y elimina las columnas viejas de `user_profile`. `PRAGMA user_version = 3`.
+
+**Supabase:** `20240101000004_stages_pregnancy.sql` (con RLS por dueña; los controles y pataditas heredan el permiso del embarazo) y `20240101000005_myth_c5.sql` (nuevo mito).
+
+---
+
+### 3.3c Roles y auditoría (solo Supabase, migración 006)
+
+| Tabla | Clave | Detalle y normalización |
+| :--- | :--- | :--- |
+| `user_roles` | `user_id` (1:1 con `auth.users`) | `role` con `CHECK IN ('admin','user','auditor')`. Tabla aparte (no una columna de `profiles`) para que una usuaria no pueda cambiarse el rol con su propia política de perfil. Solo se escribe con `set_user_role()`. |
+| `audit_log` | `id` (BIGSERIAL) | Bitácora de solo escritura: un *trigger* rechaza `UPDATE`/`DELETE`. `actor_id` no es FK para que borrar una cuenta no altere la bitácora. `details` guarda un resumen sin datos personales. |
+
+Ambas cumplen 2FN (clave simple; ningún atributo depende de media clave). Permisos por rol en [Seguridad y Roles](SEGURIDAD_Y_BUENAS_PRACTICAS.md#5-roles-y-permisos-administradora--usuaria--auditora).
 
 ---
 
