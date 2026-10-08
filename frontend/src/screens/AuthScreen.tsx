@@ -19,7 +19,8 @@ import {
   UIManager,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Lock } from 'lucide-react-native';
+import { Lock, Check } from 'lucide-react-native';
+import { PRIVACY_VERSION } from '@/data/privacy';
 import { supabase } from '@/lib/supabase';
 import { restoreHealthBackup } from '@/db/cloud';
 import { setCloudBackupEnabled } from '@/lib/prefs';
@@ -57,6 +58,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorField, setErrorField] = useState('');
+  const [accepted, setAccepted] = useState(false);
 
   const toggleAuthMode = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -68,6 +70,7 @@ export default function AuthScreen() {
     if (!isLogin && !name.trim()) return setErrorField('name');
     if (!EMAIL_RE.test(contact.trim())) return setErrorField('contact');
     if (password.length < MIN_PASSWORD) return setErrorField('password');
+    if (!isLogin && !accepted) return setErrorField('terms');
 
     setErrorField('');
     setLoading(true);
@@ -77,7 +80,7 @@ export default function AuthScreen() {
 
     const { data, error } = isLogin
       ? await supabase.auth.signInWithPassword(credentials)
-      : await supabase.auth.signUp({ ...credentials, options: { data: { display_name: name.trim() } } });
+      : await supabase.auth.signUp({ ...credentials, options: { data: { display_name: name.trim(), privacy_accepted_at: new Date().toISOString(), privacy_version: PRIVACY_VERSION } } });
 
     setLoading(false);
 
@@ -166,6 +169,33 @@ export default function AuthScreen() {
           </View>
 
           {!isLogin && (
+            <View style={{ gap: 6 }}>
+              <TouchableOpacity
+                style={styles.consent}
+                onPress={() => { setAccepted(!accepted); setErrorField(''); }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: accepted }}
+                accessibilityLabel={u('Acepto la Política de Privacidad')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.box, accepted && styles.boxOn, errorField === 'terms' && !accepted && styles.boxError]}>
+                  {accepted && <Check size={14} color={colors.white} strokeWidth={3} />}
+                </View>
+                <Text style={styles.consentText}>
+                  {u('Acepto la')}{' '}
+                  <Text style={styles.consentLink} onPress={() => navigation.navigate('Privacy')}>
+                    {u('Política de Privacidad')}
+                  </Text>
+                  {' '}{u('y entiendo cómo se usan mis datos.')}
+                </Text>
+              </TouchableOpacity>
+              {errorField === 'terms' && (
+                <Text style={styles.errorText}>{u('Debes aceptar la política de privacidad para crear tu cuenta.')}</Text>
+              )}
+            </View>
+          )}
+
+          {!isLogin && (
             <View style={styles.privacy}>
               <Lock size={14} color={colors.bosque} style={{ marginTop: 2 }} />
               <Text style={styles.privacyText}>
@@ -232,6 +262,22 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   privacyText: { flex: 1, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.muted },
+  consent: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.mutedSoft,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  boxOn: { backgroundColor: colors.carmin, borderColor: colors.carmin },
+  boxError: { borderColor: colors.carmin, backgroundColor: colors.blush },
+  consentText: { flex: 1, fontFamily: fonts.regular, fontSize: 12, lineHeight: 18, color: colors.carbon },
+  consentLink: { fontFamily: fonts.bold, color: colors.carmin, textDecorationLine: 'underline' },
   link: { alignItems: 'center', padding: 6 },
   linkText: { fontFamily: fonts.medium, fontSize: 13, color: colors.carmin },
 });
