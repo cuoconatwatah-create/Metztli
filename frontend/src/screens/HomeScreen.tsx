@@ -1,255 +1,355 @@
-﻿// ─────────────────────────────────────────────────────────
-// Metztli — Home Screen (Dynamic Dashboard & Menstruation Module)
+// ─────────────────────────────────────────────────────────
+// Metztli — Calendario / Inicio (pantalla "Tu ciclo" del prototipo)
 // ─────────────────────────────────────────────────────────
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, ScrollView, StyleSheet, SafeAreaView, Alert, TouchableOpacity, Text } from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { getUserProfile, updateUserMode, addDailyLog, getDailyLog } from '@/db/database';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Bell, Droplet, Volume2, Moon, CalendarDays, Footprints, Siren, ChevronRight } from 'lucide-react-native';
+import * as Speech from 'expo-speech';
+import { getUserProfile } from '@/db/database';
 import { useCycleCalculator } from '@/hooks/useCycleCalculator';
 import { usePregnancyCalculator } from '@/hooks/usePregnancyCalculator';
-import type { LifeStageMode } from '@/types';
-import { useNavigation } from '@react-navigation/native';
-
-import ModeSwitcher from '@/components/ModeSwitcher';
-import PregnancyTracker from '@/components/PregnancyTracker';
-import KickCounter from '@/components/KickCounter';
+import { loadDay, saveDay } from '@/lib/dailyLog';
+import type { DailyLog, LifeStageMode } from '@/types';
 import MascotCompanion from '@/components/MascotCompanion';
-import AlarmCard from '@/components/AlarmCard';
+import CycleRing, { PHASE_COLORS, PHASE_COPY } from '@/components/CycleRing';
+import { Card, CurvedHeader } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { useUi } from '@/i18n/ui';
 
-// Hackathon Menstruation Module Components
-import LunarCompass from '@/components/LunarCompass';
-import MindBodyTranslator from '@/components/MindBodyTranslator';
-import GreenPharmacyModal from '@/components/GreenPharmacyModal';
-import EducationalCarousel from '@/components/EducationalCarousel';
-import HealthStar from '@/components/HealthStar';
+const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function formatToday(u: (s: string) => string): string {
+  const d = new Date();
+  return `${u(DAYS[d.getDay()])}, ${d.getDate()} ${u('de')} ${u(MONTHS[d.getMonth()])}`;
+}
+
+const FLOW_COLORS = [
+  { id: 'rosado', label: 'Rosa', color: '#F2A6B3' },
+  { id: 'rojo', label: 'Rojo', color: '#D8344A' },
+  { id: 'rojo_oscuro', label: 'Oscuro', color: '#7A1F2D' },
+  { id: 'cafe', label: 'Café', color: '#6B3F2A' },
+];
+
+const MUCUS = [
+  { id: 'seco', label: 'Seco' },
+  { id: 'cremoso', label: 'Cremoso' },
+  { id: 'acuoso', label: 'Acuoso' },
+  { id: 'elastico', label: 'Elástico' },
+];
+
+const HEADER_TITLE: Record<LifeStageMode, string> = {
+  cycle: 'Tu ciclo',
+  pregnancy: 'Tu embarazo',
+  menopause: 'Tu etapa',
+};
+
+const LISTEN_TEXT = 'El dolor que detiene tu día merece atención. Registra tu intensidad y pide apoyo si no puedes seguir con tu día.';
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const u = useUi();
   const navigation = useNavigation<any>();
-  const [currentMode, setCurrentMode] = useState<LifeStageMode>('cycle');
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
-  const [showTranslator, setShowTranslator] = useState(false);
-  const [showPharmacy, setShowPharmacy] = useState(false);
-  const [isRetreatMode, setIsRetreatMode] = useState(false);
-  
-  const { calculation: cycleCalc } = useCycleCalculator();
+  const [mode, setMode] = useState<LifeStageMode>('cycle');
+  const [day, setDay] = useState<DailyLog | null>(null);
+  const [retreat, setRetreat] = useState(false);
+
+  const { calculation: cycleCalc, recalculate } = useCycleCalculator();
   const { calculation: pregCalc } = usePregnancyCalculator();
 
-  // Load user profile on mount
-  useEffect(() => {
-    const loadProfile = async () => {
-      const profile = await getUserProfile();
-      if (profile) {
-        setCurrentMode(profile.current_mode);
-      }
-      
-      const today = new Date().toISOString().split('T')[0];
-      const todayLog = await getDailyLog(today);
-      if (todayLog && todayLog.symptoms_json) {
-        setSelectedSymptoms(todayLog.symptoms_json);
-      }
-    };
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const profile = await getUserProfile();
+        const today = await loadDay();
+        if (!active) return;
+        if (profile) setMode(profile.current_mode);
+        setDay(today);
+        recalculate();
+      })();
+      return () => {
+        active = false;
+      };
+    }, [recalculate])
+  );
 
-  const handleModeChange = async (mode: LifeStageMode) => {
-    setCurrentMode(mode);
-    setSelectedSymptoms([]); 
-    setIsRetreatMode(false); // Reset retreat mode
-    await updateUserMode(mode);
+  const pick = async (key: 'flow_color' | 'mucus', value: string) => {
+    const current = key === 'flow_color' ? day?.flow_color : day?.mucus;
+    setDay(await saveDay({ [key]: current === value ? null : value }));
   };
 
-  const handleToggleSymptom = (symptomId: string) => {
-    setSelectedSymptoms(prev => 
-      prev.includes(symptomId) ? prev.filter(id => id !== symptomId) : [...prev, symptomId]
-    );
+  const speak = () => {
+    Speech.stop();
+    Speech.speak(u(LISTEN_TEXT), { language: 'es-ES', rate: 0.9 });
   };
 
-  const handleSaveSymptoms = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    await addDailyLog({
-      log_date: today,
-      mode: currentMode,
-      flow_level: null,
-      pain_level: null,
-      pregnancy_symptoms: null,
-      mood: null,
-      symptoms_json: selectedSymptoms,
-      notes: null,
-    });
-    setShowTranslator(false);
-    setShowPharmacy(true); // Show recommendations
-  };
-
-  const handleToggleRetreatMode = () => {
-    const newMode = !isRetreatMode;
-    setIsRetreatMode(newMode);
-    
-    if (newMode) {
-      // Mock the push notification to the partner
+  const toggleRetreat = () => {
+    const next = !retreat;
+    setRetreat(next);
+    if (next) {
       Alert.alert(
-        "Modo Retiro Activado",
-        "La pantalla se ha oscurecido para tu descanso. Se ha enviado una notificación automática a tu Red de Apoyo (Familiar/Pareja):\n\n'Ana está en sus días de Sangre Sabia y su cuerpo hace un gran esfuerzo. Es un buen momento para que la apoyés con la cena y le des un espacio de descanso.'",
-        [{ text: "Entendido" }]
+        u('Modo Retiro activado'),
+        u('La pantalla se oscureció para tu descanso. Tu red de apoyo recibirá un aviso para que te acompañe con calma y te dé espacio.'),
+        [{ text: u('Entendido') }]
       );
     }
   };
 
-  const renderDashboard = () => {
-    switch (currentMode) {
-      case 'pregnancy':
-        return (
-          <View style={{ gap: 16 }}>
-            {/* Mascot acts as the host */}
-            <MascotCompanion stage="pregnancy" weekNumber={pregCalc?.gestationalWeeks} />
-
-            {/* Global Progress Bar */}
-            {pregCalc && (
-              <View style={{ backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, elevation: 2 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 12 }}>
-                  {t('pregnancy.week', { week: pregCalc.gestationalWeeks })}
-                </Text>
-                <View style={{ height: 8, backgroundColor: 'rgba(44, 61, 48, 0.15)', borderRadius: 4, overflow: 'hidden' }}>
-                  <View style={{ height: '100%', width: `${pregCalc.progressPercent}%`, backgroundColor: '#8B2635', borderRadius: 4 }} />
-                </View>
-                <Text style={{ textAlign: 'right', marginTop: 8, color: '#666', fontSize: 14 }}>
-                  {t('pregnancy.days_remaining', { days: pregCalc.daysRemaining })}
-                </Text>
-              </View>
-            )}
-
-            {/* Hub Cards */}
-            <TouchableOpacity 
-              style={{ backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, flexDirection: 'row', alignItems: 'center', elevation: 2 }}
-              onPress={() => navigation.navigate('PregnancyTimeline')}
-            >
-              <View style={{ backgroundColor: 'rgba(44, 61, 48, 0.1)', padding: 12, borderRadius: 12, marginRight: 16 }}>
-                <Text style={{ fontSize: 24 }}>📅</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Desarrollo Semana a Semana</Text>
-                <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>Explora los cambios de tu bebé</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={{ backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, flexDirection: 'row', alignItems: 'center', elevation: 2 }}
-              onPress={() => navigation.navigate('KickCounter')}
-            >
-              <View style={{ backgroundColor: 'rgba(139, 38, 53, 0.1)', padding: 12, borderRadius: 12, marginRight: 16 }}>
-                <Text style={{ fontSize: 24 }}>🦶</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A' }}>Contador de Pataditas</Text>
-                <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>Monitorea la actividad de tu bebé</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={{ backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16, flexDirection: 'row', alignItems: 'center', elevation: 2 }}
-              onPress={() => navigation.navigate('ObstetricAlarm')}
-            >
-              <View style={{ backgroundColor: 'rgba(139, 38, 53, 0.1)', padding: 12, borderRadius: 12, marginRight: 16 }}>
-                <Text style={{ fontSize: 24 }}>🚨</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#8B2635' }}>Señales de Alarma</Text>
-                <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>Qué hacer en una emergencia</Text>
-              </View>
-            </TouchableOpacity>
-
-          </View>
-        );
-      case 'menopause':
-        return (
-          <>
-             <MascotCompanion stage="menopause" />
-          </>
-        );
-      case 'cycle':
-      default:
-        return (
-          <View>
-            <View style={{ marginBottom: 16 }}>
-              <TouchableOpacity 
-                style={{ backgroundColor: '#8B2635', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 }}
-                onPress={() => navigation.navigate('BrujulaLunar')}
-              >
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Abrir Calendario Completo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={{ backgroundColor: '#2C3D30', padding: 16, borderRadius: 12, alignItems: 'center' }}
-                onPress={() => navigation.navigate('Desmitificador')}
-              >
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Desmitificador (Mitos y Realidades)</Text>
-              </TouchableOpacity>
-            </View>
-
-            <LunarCompass 
-              calculation={cycleCalc} 
-              onOpenTranslator={() => setShowTranslator(!showTranslator)}
-              isRetreatMode={isRetreatMode}
-              onToggleRetreatMode={handleToggleRetreatMode}
-            />
-
-            {showTranslator && (
-              <MindBodyTranslator 
-                selectedIds={selectedSymptoms}
-                onToggle={handleToggleSymptom}
-                onSave={handleSaveSymptoms}
-                isRetreatMode={isRetreatMode}
-              />
-            )}
-
-            {!showTranslator && <MascotCompanion stage="cycle" />}
-
-            <HealthStar />
-
-            <EducationalCarousel isRetreatMode={isRetreatMode} />
-
-            <GreenPharmacyModal 
-              visible={showPharmacy} 
-              onClose={() => setShowPharmacy(false)}
-              symptoms={selectedSymptoms}
-            />
-          </View>
-        );
+  const showReminders = () => {
+    if (mode === 'cycle' && cycleCalc) {
+      Alert.alert(
+        u('Recordatorios'),
+        `${u('Próximo periodo')}: ${cycleCalc.nextPeriodDate}\n${u('Día de ovulación')}: ${cycleCalc.ovulationDate}`
+      );
+    } else {
+      Alert.alert(u('Recordatorios'), u('Aún no tienes recordatorios programados.'));
     }
   };
 
+  const selectedFlow = day?.flow_color ?? null;
+  const selectedMucus = day?.mucus ?? null;
+
+  const renderCycle = () => (
+    <>
+      <Card style={{ alignItems: 'center', gap: 12 }}>
+        <View style={styles.cycleHead}>
+          <View>
+            <Text style={styles.muted}>{u('Ciclo actual')}</Text>
+            <Text style={styles.strong}>
+              {cycleCalc ? u('Día {{day}} de {{total}}', { day: Math.min(cycleCalc.currentDay, cycleCalc.cycleLength), total: cycleCalc.cycleLength }) : '—'}
+            </Text>
+          </View>
+          {cycleCalc && (
+            <Text style={[styles.strong, { color: colors.carmin }]}>{u(PHASE_COPY[cycleCalc.currentPhase].label)}</Text>
+          )}
+        </View>
+
+        <CycleRing calculation={cycleCalc} />
+
+        <TouchableOpacity
+          style={styles.bleedBtn}
+          onPress={() => navigation.navigate('MiCiclo')}
+          accessibilityRole="button"
+          accessibilityLabel={u('Registrar nuevo sangrado')}
+        >
+          <Droplet size={14} color={colors.white} />
+          <Text style={styles.bleedText}>{u('Nuevo sangrado')}</Text>
+        </TouchableOpacity>
+
+        <View style={styles.legend}>
+          {(['menstrual', 'follicular', 'ovulation', 'luteal'] as const).map((p) => (
+            <View key={p} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: PHASE_COLORS[p] }]} />
+              <Text style={styles.legendText}>{u(PHASE_COPY[p].short)}</Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+
+      <View style={styles.row}>
+        <Card style={styles.half}>
+          <Text style={styles.strong}>{u('Color del flujo')}</Text>
+          <View style={styles.swatches}>
+            {FLOW_COLORS.map((f) => {
+              const active = selectedFlow === f.id;
+              return (
+                <TouchableOpacity
+                  key={f.id}
+                  onPress={() => pick('flow_color', f.id)}
+                  style={styles.swatchWrap}
+                  accessibilityRole="button"
+                  accessibilityLabel={u('Flujo {{c}}', { c: u(f.label) })}
+                  accessibilityState={{ selected: active }}
+                >
+                  <View style={[styles.swatch, { backgroundColor: f.color }, active && styles.swatchActive]} />
+                  <Text style={[styles.swatchLabel, active && { color: colors.carmin, fontFamily: fonts.bold }]}>
+                    {u(f.label)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Card>
+
+        <Card style={styles.half}>
+          <Text style={styles.strong}>{u('Moco cervical')}</Text>
+          <View style={styles.mucusGrid}>
+            {MUCUS.map((m) => {
+              const active = selectedMucus === m.id;
+              return (
+                <TouchableOpacity
+                  key={m.id}
+                  onPress={() => pick('mucus', m.id)}
+                  style={[styles.mucusChip, active && styles.mucusChipActive]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.mucusText, active && { color: colors.white }]}>{u(m.label)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Card>
+      </View>
+
+      <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('ComoHabitas')} style={styles.listenCard}>
+        <TouchableOpacity style={styles.listenIcon} onPress={speak} accessibilityLabel={u('Escuchar mensaje')} accessibilityRole="button">
+          <Volume2 size={18} color={colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.listenEyebrow}>{u('ESCUCHA Y PREVIENE')}</Text>
+          <Text style={styles.listenTitle}>{u('El dolor que detiene tu día merece atención.')}</Text>
+          <Text style={styles.listenBody}>{u('Registra tu intensidad y pide apoyo si no puedes seguir con tu día.')}</Text>
+        </View>
+        <ChevronRight size={18} color={colors.carmin} />
+      </TouchableOpacity>
+    </>
+  );
+
+  const HubRow = ({ icon, title, desc, route, danger }: { icon: React.ReactNode; title: string; desc: string; route: string; danger?: boolean }) => (
+    <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate(route)}>
+      <Card style={styles.hub}>
+        <View style={[styles.hubIcon, danger && { backgroundColor: colors.blush }]}>{icon}</View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.strong, danger && { color: colors.carmin }]}>{title}</Text>
+          <Text style={styles.muted}>{desc}</Text>
+        </View>
+        <ChevronRight size={18} color={colors.mutedSoft} />
+      </Card>
+    </TouchableOpacity>
+  );
+
+  const renderPregnancy = () => (
+    <>
+      <MascotCompanion stage="pregnancy" weekNumber={pregCalc?.gestationalWeeks} />
+      {pregCalc && (
+        <Card style={{ gap: 10 }}>
+          <Text style={styles.strong}>{u('Semana {{n}}', { n: pregCalc.gestationalWeeks })}</Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${pregCalc.progressPercent}%` }]} />
+          </View>
+          <Text style={[styles.muted, { textAlign: 'right' }]}>{u('{{n}} días para conocer a tu bebé', { n: pregCalc.daysRemaining })}</Text>
+        </Card>
+      )}
+      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Desarrollo semana a semana')} desc="Explora los cambios de tu bebé" route="PregnancyTimeline" />
+      <HubRow icon={<Footprints size={20} color={colors.carmin} />} title={u('Contador de pataditas')} desc="Monitorea la actividad de tu bebé" route="KickCounter" />
+      <HubRow danger icon={<Siren size={20} color={colors.carmin} />} title={u('Señales de alarma')} desc="Qué hacer en una emergencia" route="ObstetricAlarm" />
+      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Mi embarazo completo')} desc="Triage, semáforo y auxilio por SMS" route="Embarazo" />
+    </>
+  );
+
+  const renderMenopause = () => (
+    <>
+      <MascotCompanion stage="menopause" />
+      <HubRow icon={<CalendarDays size={20} color={colors.bosque} />} title={u('Desmitificador')} desc="Mitos y realidades de la menopausia" route="Desmitificador" />
+    </>
+  );
+
   return (
-    <SafeAreaView style={[styles.safeArea, isRetreatMode && styles.safeAreaDark]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        <ModeSwitcher currentMode={currentMode} onModeChange={handleModeChange} />
-        
-        <View style={styles.divider} />
+    <SafeAreaView style={[styles.safeArea, retreat && styles.safeAreaDark]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+        <CurvedHeader
+          eyebrow={formatToday(u)}
+          title={u(HEADER_TITLE[mode])}
+          right={
+            <TouchableOpacity style={styles.bell} onPress={showReminders} accessibilityLabel={u('Recordatorios')} accessibilityRole="button">
+              <Bell size={18} color={colors.white} />
+            </TouchableOpacity>
+          }
+        />
 
-        {renderDashboard()}
+        <View style={styles.body}>
+          {mode === 'cycle' ? renderCycle() : mode === 'pregnancy' ? renderPregnancy() : renderMenopause()}
 
+          <TouchableOpacity activeOpacity={0.9} onPress={toggleRetreat} style={[styles.retreat, retreat && { backgroundColor: colors.bosque }]}>
+            <Moon size={18} color={retreat ? colors.avena : colors.bosque} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.strong, retreat && { color: colors.avena }]}>{u('Modo retiro')}</Text>
+              <Text style={[styles.muted, retreat && { color: 'rgba(244,241,234,0.7)' }]}>
+                {retreat ? u('Activo · toca para desactivar') : u('Descansa y avisa a tu red de apoyo')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA', // Avena (Día)
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  safeAreaDark: { backgroundColor: '#111512' },
+  body: { padding: 16, gap: 16 },
+  bell: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  safeAreaDark: {
-    backgroundColor: '#111512', // Verde muy oscuro / Casi negro (Noche)
+  muted: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted },
+  strong: { fontFamily: fonts.bold, fontSize: 14, color: colors.carbon },
+  cycleHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'stretch' },
+  bleedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.carmin,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    marginTop: -26,
   },
-  scrollContent: {
-    padding: 24,
-    paddingBottom: 60,
-    gap: 24,
+  bleedText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.white },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontFamily: fonts.regular, fontSize: 10, color: colors.muted, textTransform: 'capitalize' },
+  row: { flexDirection: 'row', gap: 12 },
+  half: { flex: 1, gap: 10, padding: 14 },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  swatchWrap: { alignItems: 'center', gap: 4, width: '40%' },
+  swatch: { width: 26, height: 26, borderRadius: 13 },
+  swatchActive: { borderWidth: 3, borderColor: colors.white, shadowColor: colors.carmin, shadowOpacity: 0.6, shadowRadius: 4, elevation: 4 },
+  swatchLabel: { fontFamily: fonts.regular, fontSize: 9, color: colors.muted },
+  mucusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  mucusChip: {
+    flexGrow: 1,
+    minWidth: '44%',
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.avena,
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'transparent', // Remover línea dura, usar espacio negativo
-    marginVertical: 4,
-  }
+  mucusChipActive: { backgroundColor: colors.bosque },
+  mucusText: { fontFamily: fonts.medium, fontSize: 10, color: colors.carbon },
+  listenCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: radius.lg,
+    backgroundColor: '#EFE2D6',
+  },
+  listenIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bosque, alignItems: 'center', justifyContent: 'center' },
+  listenEyebrow: { fontFamily: fonts.semibold, fontSize: 9, letterSpacing: 1.2, color: colors.carmin, marginBottom: 2 },
+  listenTitle: { fontFamily: fonts.bold, fontSize: 14, color: colors.carbon, lineHeight: 19 },
+  listenBody: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted, marginTop: 4, lineHeight: 16 },
+  hub: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  hubIcon: { width: 44, height: 44, borderRadius: radius.sm, backgroundColor: colors.avena, alignItems: 'center', justifyContent: 'center' },
+  progressTrack: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: colors.carmin, borderRadius: 4 },
+  retreat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: radius.lg,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
 });

@@ -3,11 +3,11 @@
     "name": "Metztli",
     "slug": "metztli",
     "version": "2.0.0",
-    "icon": "./assets/icon.jpg",
+    "icon": "./assets/logo.png",
     "splash": {
-      "image": "./assets/icon.jpg",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#17153B"
+      "backgroundColor": "#F4F1EA"
     },
     "orientation": "portrait",
     "scheme": "metztli",
@@ -20,11 +20,16 @@
       "package": "com.metztli.app",
       "permissions": [
         "android.permission.CALL_PHONE"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F4F1EA"
+      }
     },
     "plugins": [
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      "expo-font"
     ]
   }
 }

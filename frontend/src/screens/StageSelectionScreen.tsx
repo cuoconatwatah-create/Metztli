@@ -1,145 +1,111 @@
+// ─────────────────────────────────────────────────────────
+// Metztli — Elección de etapa (onboarding 2 del prototipo)
+// ─────────────────────────────────────────────────────────
+
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Moon, Sun, Leaf } from 'lucide-react-native';
 import { updateUserMode } from '@/db/database';
 import type { LifeStageMode } from '@/types';
-import { Moon, Baby, Sparkles } from 'lucide-react-native';
+import { Button, BackLink, StepDots } from '@/components/ui';
+import { colors, fonts, radius } from '@/theme';
+import { useUi } from '@/i18n/ui';
+
+const STAGES: { mode: LifeStageMode; title: string; desc: string; Icon: typeof Moon }[] = [
+  { mode: 'cycle', title: 'Menstruación', desc: 'Conociendo mi cuerpo y mi ciclo', Icon: Moon },
+  { mode: 'pregnancy', title: 'Embarazo', desc: 'Gestación y plenitud', Icon: Sun },
+  { mode: 'menopause', title: 'Menopausia', desc: 'La mujer sabia', Icon: Leaf },
+];
 
 export default function StageSelectionScreen() {
+  const u = useUi();
   const navigation = useNavigation<any>();
   const [selected, setSelected] = useState<LifeStageMode | null>(null);
 
   const handleContinue = async () => {
     if (!selected) {
-      Alert.alert('Selecciona una etapa', 'Por favor elige la etapa en la que te encuentras para personalizar tu Santuario.');
+      Alert.alert(u('Selecciona una etapa'), u('Por favor elige la etapa en la que te encuentras para personalizar tu espacio.'));
       return;
     }
-
     try {
       await updateUserMode(selected);
-      navigation.navigate('TribuCode');
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert('Error Guardando', e.message);
-      // Navegamos igual de momento para no bloquear la demo
-      navigation.navigate('TribuCode');
+    } catch (e) {
+      // No bloqueamos el onboarding: la etapa se puede cambiar luego en Perfil.
+      console.warn('No se pudo guardar la etapa', e);
     }
+    navigation.navigate('TribuCode');
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        <Text style={styles.title}>¿En qué etapa de tu vida te encontrás hoy?</Text>
-        <Text style={styles.subtitle}>Esto nos ayudará a personalizar tu Brújula Lunar y tus consejos de la Farmacia Verde.</Text>
+        <BackLink onPress={() => navigation.goBack()} />
 
-        <View style={styles.options}>
-          
-          <TouchableOpacity 
-            style={[styles.card, selected === 'cycle' && styles.cardSelected]}
-            onPress={() => setSelected('cycle')}
-          >
-            <Moon size={28} color={selected === 'cycle' ? '#F4F1EA' : '#2C3D30'} />
-            <Text style={[styles.cardText, selected === 'cycle' && styles.textSelected]}>
-              Menstruación / Ciclo
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.card, selected === 'pregnancy' && styles.cardSelected]}
-            onPress={() => setSelected('pregnancy')}
-          >
-            <Baby size={28} color={selected === 'pregnancy' ? '#F4F1EA' : '#2C3D30'} />
-            <Text style={[styles.cardText, selected === 'pregnancy' && styles.textSelected]}>
-              Embarazo
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.card, selected === 'menopause' && styles.cardSelected]}
-            onPress={() => setSelected('menopause')}
-          >
-            <Sparkles size={28} color={selected === 'menopause' ? '#F4F1EA' : '#2C3D30'} />
-            <Text style={[styles.cardText, selected === 'menopause' && styles.textSelected]}>
-              Menopausia / Climaterio
-            </Text>
-          </TouchableOpacity>
-
+        <View style={{ gap: 6 }}>
+          <Text style={styles.eyebrow}>{u('ETAPA')}</Text>
+          <Text style={styles.title}>{u('Elige tu etapa actual')}</Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.primaryBtn, !selected && styles.primaryBtnDisabled]} 
-          onPress={handleContinue}
-          disabled={!selected}
-        >
-          <Text style={styles.primaryBtnText}>Continuar</Text>
-        </TouchableOpacity>
+        <View style={styles.options}>
+          {STAGES.map(({ mode, title, desc, Icon }) => {
+            const isSelected = selected === mode;
+            return (
+              <TouchableOpacity
+                key={mode}
+                activeOpacity={0.9}
+                onPress={() => setSelected(mode)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isSelected }}
+                style={[styles.card, isSelected && styles.cardSelected]}
+              >
+                <View style={[styles.iconBox, isSelected && { backgroundColor: colors.carmin }]}>
+                  <Icon size={22} color={isSelected ? colors.white : colors.mutedSoft} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cardTitle, isSelected && { color: colors.carmin }]}>{u(title)}</Text>
+                  <Text style={styles.cardDesc}>{u(desc)}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
+        <View style={{ flex: 1 }} />
+        <StepDots total={5} active={1} />
+        <Button label={u('COMENZAR (Usuaria)')} onPress={handleContinue} disabled={!selected} />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  title: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 28,
-    color: '#1A1A1A',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#4A5568',
-    marginBottom: 40,
-    lineHeight: 24,
-  },
-  options: {
-    gap: 16,
-    marginBottom: 40,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 24 },
+  eyebrow: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1.2, color: colors.mutedSoft },
+  title: { fontFamily: fonts.display, fontSize: 26, color: colors.carmin },
+  options: { gap: 14 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#2C3D30', // Verde Bosque
-    backgroundColor: 'transparent',
+    gap: 14,
+    padding: 16,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.disabled,
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
-  cardSelected: {
-    backgroundColor: '#2C3D30',
-  },
-  cardText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    color: '#2C3D30',
-    marginLeft: 16,
-  },
-  textSelected: {
-    color: '#F4F1EA',
-  },
-  primaryBtn: {
-    backgroundColor: '#8B2635',
-    paddingVertical: 18,
-    borderRadius: 32,
+  cardSelected: { borderColor: colors.carmin, backgroundColor: colors.blush },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.sm,
+    backgroundColor: colors.avena,
+    borderWidth: 1,
+    borderColor: colors.line,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  primaryBtnDisabled: {
-    backgroundColor: '#A0AEC0',
-  },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-  }
+  cardTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.carbon },
+  cardDesc: { fontFamily: fonts.regular, fontSize: 12, color: colors.muted, marginTop: 2 },
 });
