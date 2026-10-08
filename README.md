@@ -216,5 +216,5 @@ Complementarios: [Funcionalidades del Reto](docs/FUNCIONALIDADES_DEL_RETO.md) ·
 ---
 
 ## 👥 Equipo y créditos
-- **Metztli Team — Costa Caribe de Nicaragua**
+- **Equipo CUOCONATWATAH** — Costa Caribe de Nicaragua
 - Licencia: código de impacto social y comunitario.
