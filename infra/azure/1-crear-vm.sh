@@ -36,11 +36,12 @@ az account show --query '{Suscripcion:name, Estado:state}' --output table || {
 CREATED=0
 for L in $LOCATIONS; do
   echo
-  echo "▶ Región: $L — buscando tamaños disponibles para tu suscripción…"
-  AVAILABLE="$(az vm list-skus --location "$L" --resource-type virtualMachines \
-    --query "[?length(restrictions)==\`0\`].name" --output tsv 2>/dev/null || true)"
+  echo "▶ Región: $L"
   for S in $SIZES; do
-    if ! printf '%s\n' "$AVAILABLE" | grep -qx "$S"; then
+    # Se pregunta por cada tamaño (rápido); listar todos los de una región tarda minutos
+    N="$(az vm list-skus --location "$L" --size "$S" --resource-type virtualMachines \
+      --query "[?name=='$S' && length(restrictions)==\`0\`] | length(@)" --output tsv 2>/dev/null || echo 0)"
+    if [ "${N:-0}" = "0" ]; then
       echo "   · $S no está disponible en $L"; continue
     fi
     echo "▶ Creando la VM Ubuntu 22.04 ($S) en $L. Puede tardar 1–3 minutos…"
