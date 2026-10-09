@@ -22,12 +22,13 @@
 # Variables opcionales:
 #   PUBLIC_HOST=mi-dominio.com   usa tu propio dominio en lugar de <IP>.sslip.io
 #   SITE_URL=https://...         a dónde llevan los enlaces de correo (por defecto, la web de Metztli)
-#   REPO=https://github.com/cuoconatwatah-create/Metztli
+#   REPO=https://github.com/cuoconatwatah-create/Metztli   BRANCH=main (rama de la que se toma la landing y las tablas)
 # Se puede ejecutar de nuevo sin romper nada: no regenera claves ni repite las tablas.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
 REPO="${REPO:-https://github.com/cuoconatwatah-create/Metztli}"
+BRANCH="${BRANCH:-main}"
 SITE_URL="${SITE_URL:-https://cuoconatwatah-create.github.io/Metztli/}"
 BASE=/opt/metztli-supabase
 SRC=/opt/metztli-src
@@ -96,7 +97,7 @@ jwt() { # jwt <rol>  → token firmado con JWT_SECRET (10 años)
 
 say "Descargando el código de Metztli (landing, panel y tablas)"
 if [ ! -d "$SRC/.git" ]; then
-  sudo rm -rf "$SRC"; sudo git clone --depth 1 "$REPO" "$SRC"
+  sudo rm -rf "$SRC"; sudo git clone --depth 1 --branch "$BRANCH" "$REPO" "$SRC"
 else
   sudo git -C "$SRC" pull --ff-only || true
 fi
