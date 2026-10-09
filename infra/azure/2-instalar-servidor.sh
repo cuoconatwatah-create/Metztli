@@ -189,7 +189,8 @@ done
 if psql_admin -tAc "select to_regclass('public.daily_logs') is not null" | grep -q t; then
   echo "   Las tablas de Metztli ya existen; no se repite."
 else
-  psql_admin -v ON_ERROR_STOP=1 < "$SRC/backend/supabase/setup_completo.sql"
+  # sed quita marcas BOM invisibles que haría fallar a psql
+  sed 's/\xEF\xBB\xBF//g' "$SRC/backend/supabase/setup_completo.sql" | psql_admin -v ON_ERROR_STOP=1
   echo "   Tablas creadas."
 fi
 

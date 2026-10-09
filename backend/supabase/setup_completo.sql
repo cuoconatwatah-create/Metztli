@@ -2,7 +2,7 @@
 -- Generado a partir de supabase/migrations/*. Ejecutar UNA sola vez en un proyecto vacío.
 
 -- ===== migrations/20240101000000_init.sql =====
-﻿-- ─────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────
 -- Metztli — Supabase PostgreSQL Schema
 -- ─────────────────────────────────────────────────────────
 
