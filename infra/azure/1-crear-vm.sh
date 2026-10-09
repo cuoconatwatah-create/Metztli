@@ -12,8 +12,8 @@
 #
 # Variables opcionales (con su valor por defecto):
 #   RG=metztli-rg  VM=metztli-vm  ADMIN=azureuser
-#   LOCATIONS="eastus2 westus3 centralus westus2 eastus brazilsouth southcentralus canadacentral"
-#   SIZES="Standard_B2s Standard_B2ls_v2 Standard_B2as_v2 Standard_B2s_v2 Standard_D2s_v3"
+#   LOCATIONS="chilecentral brazilsouth eastus2 westus3 centralus canadacentral"
+#   SIZES="Standard_B2as_v2 Standard_B2s_v2 Standard_B2s Standard_B2ls_v2 Standard_D2s_v3"
 #   MY_IP=1.2.3.4   Si la pones, el puerto SSH (22) solo se abre para esa IP.
 #
 # Supabase completo pide al menos 4 GB de memoria: todos los tamaños de la lista
@@ -26,8 +26,9 @@ RG="${RG:-metztli-rg}"
 VM="${VM:-metztli-vm}"
 ADMIN="${ADMIN:-azureuser}"
 MY_IP="${MY_IP:-}"
-LOCATIONS="${LOCATIONS:-${LOCATION:-eastus2 westus3 centralus westus2 eastus brazilsouth southcentralus canadacentral}}"
-SIZES="${SIZES:-${SIZE:-Standard_B2s Standard_B2ls_v2 Standard_B2as_v2 Standard_B2s_v2 Standard_D2s_v3}}"
+# Azure for Students: el organizador del reto recomienda Chile Central y Standard_B2as_v2 (2 CPU, 8 GB).
+LOCATIONS="${LOCATIONS:-${LOCATION:-chilecentral brazilsouth eastus2 westus3 centralus canadacentral}}"
+SIZES="${SIZES:-${SIZE:-Standard_B2as_v2 Standard_B2s_v2 Standard_B2s Standard_B2ls_v2 Standard_D2s_v3}}"
 
 echo "▶ Cuenta de Azure en uso:"
 az account show --query '{Suscripcion:name, Estado:state}' --output table || {
