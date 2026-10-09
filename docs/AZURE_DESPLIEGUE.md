@@ -10,14 +10,18 @@
 
 ```mermaid
 flowchart LR
-    APP["App Metztli<br/>Android o web"] -->|"HTTPS 443"| IP["IP publica de Azure<br/>(nombre sslip.io)"]
+    APP["App Metztli<br/>Android"] -->|"HTTPS 443"| IP["IP publica de Azure<br/>(nombre sslip.io)"]
+    WEB["Navegador<br/>landing y panel"] -->|"HTTPS 443"| IP
     subgraph VM["Maquina virtual Ubuntu 22.04"]
         IP --> CADDY["Caddy<br/>HTTPS automatico"]
-        CADDY --> KONG["Gateway de Supabase<br/>puerto 8000"]
+        CADDY -->|"/"| LAND["Landing y panel<br/>archivos estaticos"]
+        CADDY -->|"/auth /rest /storage"| KONG["Gateway de Supabase<br/>puerto 8000"]
         KONG --> AUTH["Auth"]
         KONG --> REST["API REST"]
+        KONG --> STO["Almacenamiento<br/>APK hasta 300 MB"]
         AUTH --> PG[("PostgreSQL<br/>tablas de Metztli")]
         REST --> PG
+        STO --> PG
     end
     NSG["Reglas de red de Azure<br/>abiertos: 22, 80, 443"] -.-> VM
 ```
@@ -83,13 +87,19 @@ Tarda entre 10 y 20 minutos, sobre todo por descargar las imágenes. Hace esto:
 
 1. Prepara el sistema: memoria *swap* de 2 GB, Docker, Node.js 20 y Python 3.
 2. Descarga Supabase para servidor propio y **genera claves y contraseñas nuevas**, solo para este servidor.
-3. Publica la API por HTTPS en `https://<IP>.sslip.io`, con certificado automático (Caddy).
+3. Publica todo por HTTPS en `https://<IP>.sslip.io` con certificado automático (Caddy): la **landing page** en `/`, el **panel del equipo** en `/admin.html` y la API de Supabase en `/auth`, `/rest` y `/storage`.
 4. Crea las tablas, roles y reglas de seguridad de Metztli (`backend/supabase/setup_completo.sql`).
-5. Guarda todo en `/opt/metztli-supabase/CREDENCIALES.txt`.
+5. Sube el límite de archivos a 300 MB (el APK pesa unos 86 MB) y guarda todo en `/opt/metztli-supabase/CREDENCIALES.txt`.
 
 Al final imprime las dos líneas que necesita la app. Es seguro ejecutarlo otra vez: no regenera claves ni repite las tablas.
 
-**Evidencias del servidor** (hace las capturas de los entregables 2, 3, 4 y 5):
+**Cuenta de Administrador** para entrar al panel (pide la contraseña sin mostrarla):
+
+```bash
+bash /opt/metztli-src/infra/azure/4-crear-admin.sh tu@correo.com
+```
+
+**Evidencias del servidor** (haz las capturas de los entregables 2, 3, 4 y 5):
 
 ```bash
 bash /opt/metztli-src/infra/azure/3-evidencias.sh
@@ -130,12 +140,38 @@ sudo docker exec supabase-db psql -U supabase_admin -d postgres -c "select log_d
 
 ---
 
-## 8. Seguridad y límites
+## 8. Landing page, solicitudes de demo y panel del equipo (segundo sprint)
+
+El organizador pide, para apps nativas, tres piezas. Todas están hechas y se publican con el mismo servidor:
+
+| Pieza pedida | Qué es | Dónde está |
+| :--- | :--- | :--- |
+| **Landing page** | Presenta Metztli y tiene el botón de descarga del APK (toma la versión actual de la base de datos). | `https://<IP>.sslip.io/` (código en `landing/`) |
+| **Formulario de solicitud de demo** | Nombre, correo, organización y mensaje, con casilla de consentimiento. Guarda en la tabla `demo_requests`. | Sección "Solicita una demostración" de la landing |
+| **Panel administrativo privado** | Acceso con cuenta de **Administrador**: gestiona las solicitudes (estado, responder, eliminar) y **sube las versiones instalables** (APK, y EXE o DMG cuando existan). | `https://<IP>.sslip.io/admin.html` |
+
+**Cómo se protege:** el panel no es "secreto por no tener enlace": la base de datos solo deja leer y cambiar solicitudes y versiones al rol **admin** (`demo_requests` y `app_releases` con RLS, y el bucket `app-releases` del almacenamiento). Cualquiera puede *enviar* una solicitud y *leer cuál es la versión actual*, y nada más. La bitácora registra el trabajo del personal sin copiar nombres ni correos. Todo está probado con `cd backend && npm run test:rls`.
+
+**Uso:**
+1. En la VM: `bash /opt/metztli-src/infra/azure/4-crear-admin.sh tu@correo.com`.
+2. Entra a `/admin.html` con ese correo y contraseña.
+3. Pestaña **Versiones de la app → Publicar una versión**: elige Android, escribe la versión (por ejemplo `2.0.9`), sube el `.apk` y deja marcada "versión actual". La landing muestra de inmediato el botón de descarga.
+4. Pestaña **Solicitudes de demo**: llegan las que envíe cualquier persona desde la landing.
+
+**Probar en tu computadora** (sin servidor): `node scripts/serve-landing.mjs` y abre `http://localhost:8083/`. Sin servidor conectado, el botón de descarga lleva a los Releases de GitHub y el formulario avisa que aún no está conectado.
+
+**Copia en GitHub Pages:** cada publicación de `main` también deja la landing en `https://cuoconatwatah-create.github.io/Metztli/landing/` conectada a la base de datos que indiquen las variables del repositorio. Para que funcione hay que aplicar `backend/supabase/migrations/20240101000007_landing_demo_apk.sql` en esa base (pegarla en *SQL Editor*). En Supabase gratuito cada archivo subido puede pesar **hasta 50 MB**, así que ahí el APK (86 MB) se publica con la opción de **enlace de descarga** (por ejemplo, el Release de GitHub); en el servidor de Azure sí se puede subir el archivo.
+
+**Paquetes del Release:** al crear una etiqueta `v*`, el flujo *Package Release* adjunta `metztli-web-<versión>.zip` (la web compilada) y `metztli-azure-<versión>.zip` (scripts, landing, panel y tablas), además del APK.
+
+---
+
+## 9. Seguridad y límites
 
 - **Correo de confirmación apagado**: el script deja `ENABLE_EMAIL_AUTOCONFIRM=true` para no depender de un servidor de correo. Cualquier persona puede crear una cuenta con un correo que no es suyo. Para producción, configura SMTP y ponlo en `false` en `/opt/metztli-supabase/.env`, y reinicia con `sudo docker compose up -d`.
 - **Claves nuevas**: el servidor propio usa sus propias claves, distintas a las de Supabase en la nube. `CREDENCIALES.txt` tiene secretas (`POSTGRES_PASSWORD`, `JWT_SECRET`, `SERVICE_ROLE_KEY`): **no las subas a GitHub** ni las compartas. Solo la `ANON_KEY` va en la app.
 - **Puertos**: solo se abren 22, 80 y 443. El gateway de Supabase (8000) y la base de datos (5432) quedan cerrados desde internet. Limita el 22 a tu IP con `MY_IP`.
-- **Panel de administración (Studio)**: está en la misma dirección, protegido con usuario y contraseña (están en `CREDENCIALES.txt`).
+- **Panel de la base de datos (Studio)**: no se expone a internet. Para verlo, abre un túnel desde tu computadora: `ssh -L 8000:localhost:8000 azureuser@IP_PUBLICA` y entra a `http://localhost:8000` (usuario y contraseña en `CREDENCIALES.txt`).
 - **HTTPS con `sslip.io`**: es un servicio gratuito de terceros que apunta un nombre a tu IP. Sus certificados comparten un límite de emisión; si falla, usa tu propio dominio con `PUBLIC_HOST=tu-dominio.com`. Si cambia la IP de la VM (por ejemplo, al apagarla y encenderla), cambia el nombre: lo más simple es reservar la IP como *estática* en Azure.
 - **Copias de seguridad**: la VM no hace copias automáticas. Para la presentación no hace falta.
 - **Sin probar en Azure**: estos scripts no se han ejecutado contra una cuenta real. Si un paso falla, el mensaje de error dice cuál; la causa más probable es la memoria (usa una VM de al menos 4 GB) o la descarga de imágenes.

@@ -92,7 +92,7 @@ Metztli tiene tres perfiles de acceso. Cada uno solo ve y hace lo que necesita:
 | Perfil | Para qué sirve |
 | :--- | :--- |
 | **Usuarios** | Es el perfil de todas las personas que usan la app: registrar su etapa, aprender, participar en el foro y, si quieren, respaldar sus propios datos. |
-| **Administradores** | Cuida el contenido de la plataforma: gestiona las cuentas y sus perfiles, modera el foro y mantiene los mitos y el directorio. |
+| **Administradores** | Cuida el contenido de la plataforma: gestiona las cuentas y sus perfiles, modera el foro, mantiene los mitos y el directorio, atiende las solicitudes de demo y publica las versiones de la app. |
 | **Auditores** | Revisa que todo funcione con transparencia: consulta estadísticas generales y el historial de acciones, solo para lectura. |
 
 **Privacidad ante todo**: los datos de salud de cada persona son solo suyos. Ni la administración ni la auditoría pueden verlos, y las acciones del personal quedan registradas en un historial que no se puede modificar. El detalle técnico y las pruebas están en [Seguridad y Buenas Prácticas](docs/SEGURIDAD_Y_BUENAS_PRACTICAS.md).
@@ -196,7 +196,7 @@ npx expo start -c        # móvil con Expo Go (escanea el QR)
 - **Automático:** el workflow *Build Android APK* genera el APK en cada push a `main` (pestaña **Actions → Artifacts**) y, al crear una etiqueta `v*`, lo publica en **Releases**.
 - **Local:** `npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease`
 
-Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md). Servidor propio en Azure: [Despliegue en Azure](docs/AZURE_DESPLIEGUE.md).
+Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md). Servidor propio en Azure, **landing page, formulario de demo y panel del equipo** (con subida del APK): [Despliegue en Azure](docs/AZURE_DESPLIEGUE.md#8-landing-page-solicitudes-de-demo-y-panel-del-equipo-segundo-sprint). El código está en [`landing/`](landing/).
 
 ---
 
