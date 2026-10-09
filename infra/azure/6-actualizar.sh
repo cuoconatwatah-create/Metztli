@@ -123,6 +123,18 @@ http://$PUBLIC_IP {
   import sitio
 }
 EOF
+# Si Studio estaba encendido (8-studio.sh on), se conserva el estado al actualizar
+if [ -f "$BASE/studio.on" ]; then
+  cat >> "$BASE/Caddyfile" <<EOF
+# >>> studio
+studio.$HOST {
+  reverse_proxy 127.0.0.1:8000 {
+    flush_interval -1
+  }
+}
+# <<< studio
+EOF
+fi
 $DOCKER run --rm -v "$BASE/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --config /etc/caddy/Caddyfile >/dev/null
 $DOCKER rm -f caddy >/dev/null 2>&1 || true
 $DOCKER run -d --name caddy --restart unless-stopped --network host \

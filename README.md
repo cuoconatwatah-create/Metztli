@@ -268,6 +268,7 @@ La app Android se compila en GitHub al crear una etiqueta `v*`, usando las varia
 | Qué | Dónde está | Cómo verlo |
 | :--- | :--- | :--- |
 | **Base de datos** (PostgreSQL) | Dentro de la VM, en un contenedor de Docker (`supabase-db`). No tiene dirección pública | Sin abrir SSH, desde Azure Cloud Shell: `az vm run-command invoke -g metztli-rg -n metztli-vm --command-id RunShellScript --scripts "bash /opt/metztli-src/infra/azure/7-ver-base.sh" --query "value[0].message" -o tsv`. Muestra tablas, filas, cuentas (correo enmascarado) y versiones |
+| **La base de datos con la web de Supabase (Studio)** | La misma interfaz de supabase.com, instalada en el servidor y **apagada por defecto** | `8-studio.sh on` la enciende en `https://studio.57-156-57-186.sslip.io` con usuario y contraseña; `off` la apaga. Ver [docs/AZURE_DESPLIEGUE.md](docs/AZURE_DESPLIEGUE.md) |
 | **Solicitudes de demo y versiones** | Tablas `demo_requests` y `app_releases` | Panel del equipo: `/admin.html` (rol Administrador) |
 | **Estructura de la base** | `backend/supabase/migrations/` y `setup_completo.sql` | En este repositorio; el diagrama está en [docs/DIAGRAMA_BASE_DATOS.md](docs/DIAGRAMA_BASE_DATOS.md) |
 | **APK** | Copia en el almacenamiento del servidor, y en cada Release de GitHub | Botón de descarga de la landing, o [Releases](https://github.com/cuoconatwatah-create/Metztli/releases/latest) |
