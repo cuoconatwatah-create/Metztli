@@ -55,11 +55,14 @@ Speech.speak(tipMessage, {
 ```
 
 ### 3.3 Auxilio SMS Nativo sin Cobertura de Datos
-En situaciones donde la conectividad 3G/4G no existe pero hay señal de telefonía básica, el enlace nativo dispara la mensajería celular pre-cargada:
+En situaciones donde la conectividad 3G/4G no existe pero hay señal de telefonía básica, el enlace nativo abre la mensajería del teléfono con el texto de auxilio ya escrito y **sin destinatario**: la persona elige a su partera o a alguien de confianza (no existe un único número válido para todas las comunidades). Para llamar, la app usa el **128** (ambulancia / Cruz Roja Nicaragüense):
 ```typescript
+// frontend/src/data/emergency.ts
+export const AMBULANCE_NUMBER = '128';
+export const buildSmsUrl = (body: string) => `sms:?body=${encodeURIComponent(body)}`; // iOS usa "sms:&body="
+
 // frontend/src/screens/PregnancyScreen.tsx
-const smsUrl = `sms:+50588880000?body=${encodeURIComponent(symptom.smsMessage)}`;
-await Linking.openURL(smsUrl);
+await Linking.openURL(buildSmsUrl(symptom.smsMessage));
 ```
 
 ### 3.4 Inclusión Lingüística en Tiempo Real

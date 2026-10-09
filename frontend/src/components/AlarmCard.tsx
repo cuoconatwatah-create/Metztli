@@ -9,16 +9,14 @@ import { useTranslation } from 'react-i18next';
 import * as Linking from 'expo-linking';
 import GlassCard from './GlassCard';
 import type { AlarmCardProps } from '@/types';
+import { AMBULANCE_NUMBER } from '@/data/emergency';
 
 export default function AlarmCard({ municipality }: AlarmCardProps) {
   const { t } = useTranslation();
 
-  // En producción, buscar el número real basado en el municipio
-  // usando getDirectoryContacts(municipality)
-  const EMERGENCY_NUMBER = '+505-8888-8888'; 
-
+  // Ambulancia / Cruz Roja Nicaragüense (ver data/emergency.ts)
   const handleCall = () => {
-    Linking.openURL(`tel:${EMERGENCY_NUMBER}`).catch((err) =>
+    Linking.openURL(`tel:${AMBULANCE_NUMBER}`).catch((err) =>
       console.error('Error opening dialer', err)
     );
   };

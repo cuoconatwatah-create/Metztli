@@ -1,144 +1,93 @@
+// ─────────────────────────────────────────────────────────
+// Metztli — Pantalla del contador de pataditas
+// ─────────────────────────────────────────────────────────
+
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { Clock } from 'lucide-react-native';
 import KickCounter from '@/components/KickCounter';
+import { Card, CurvedHeader, SectionTitle } from '@/components/ui';
 import { KickCounterLog } from '@/types';
 import { getTodayKickSessions, addKickSession } from '@/db/database';
+import { colors, fonts } from '@/theme';
+import { useUi } from '@/i18n/ui';
 
 export default function KickCounterScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const u = useUi();
   const [sessions, setSessions] = React.useState<KickCounterLog[]>([]);
+
+  const loadSessions = React.useCallback(async () => {
+    setSessions(await getTodayKickSessions());
+  }, []);
 
   React.useEffect(() => {
     loadSessions();
-  }, []);
-
-  const loadSessions = async () => {
-    const todaySessions = await getTodayKickSessions();
-    setSessions(todaySessions);
-  };
+  }, [loadSessions]);
 
   const handleSessionComplete = async (count: number, duration: number) => {
     await addKickSession(new Date().toISOString(), count, duration);
     await loadSessions();
   };
 
+  const total = sessions.reduce((sum, s) => sum + s.kick_count, 0);
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#8B2635" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('kicks.title')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+        <CurvedHeader title={t('kicks.title')} onBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.description}>
-          Contar las pataditas es una forma de monitorear el bienestar de tu bebé. 
-          Siéntate o recuéstate de lado en un lugar tranquilo.
-        </Text>
-        
-        <KickCounter onSessionComplete={handleSessionComplete} />
+        <View style={styles.body}>
+          <Text style={styles.description}>
+            {u('Contar las pataditas es una forma de monitorear el bienestar de tu bebé. Siéntate o recuéstate de lado en un lugar tranquilo.')}
+          </Text>
 
-        {sessions.length > 0 && (
-          <View style={styles.sessionsContainer}>
-            <Text style={styles.sessionsTitle}>Registros de Hoy</Text>
-            {sessions.map((s, index) => (
-              <View key={s.id || index} style={styles.sessionCard}>
-                <View style={styles.sessionTime}>
-                  <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.sessionTimeText}>
-                    {new Date(s.session_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-                <View style={styles.sessionDetails}>
-                  <Text style={styles.sessionKicks}>{s.kick_count} pataditas</Text>
-                  <Text style={styles.sessionDuration}>en {s.duration_minutes} min</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+          <KickCounter onSessionComplete={handleSessionComplete} />
+
+          <SectionTitle>{u('Registros de hoy')}</SectionTitle>
+          {sessions.length === 0 ? (
+            <Text style={styles.empty}>{t('kicks.no_sessions')}</Text>
+          ) : (
+            <>
+              <Text style={styles.total}>
+                {sessions.length === 1
+                  ? u('Hoy: {{n}} pataditas en 1 sesión', { n: total })
+                  : u('Hoy: {{n}} pataditas en {{s}} sesiones', { n: total, s: sessions.length })}
+              </Text>
+              {sessions.map((s, index) => (
+                <Card key={s.id || index} style={styles.session}>
+                  <View style={styles.time}>
+                    <Clock size={16} color={colors.mutedSoft} />
+                    <Text style={styles.timeText}>
+                      {new Date(s.session_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.kicks}>{u('{{n}} pataditas', { n: s.kick_count })}</Text>
+                    <Text style={styles.duration}>{u('en {{n}} min', { n: s.duration_minutes })}</Text>
+                  </View>
+                </Card>
+              ))}
+            </>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F4F1EA',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8B2635',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 60,
-  },
-  description: {
-    fontSize: 16,
-    color: '#4A4A4A',
-    marginBottom: 24,
-    lineHeight: 24,
-  },
-  sessionsContainer: {
-    marginTop: 32,
-  },
-  sessionsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3D30',
-    marginBottom: 16,
-  },
-  sessionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(44, 61, 48, 0.1)',
-  },
-  sessionTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  sessionTimeText: {
-    color: '#666',
-    fontWeight: '500',
-  },
-  sessionDetails: {
-    alignItems: 'flex-end',
-  },
-  sessionKicks: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8B2635',
-  },
-  sessionDuration: {
-    fontSize: 12,
-    color: '#666',
-  }
+  safeArea: { flex: 1, backgroundColor: colors.avena },
+  body: { padding: 16, gap: 14 },
+  description: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 21, color: colors.muted },
+  empty: { fontFamily: fonts.regular, fontSize: 13, color: colors.mutedSoft, textAlign: 'center', paddingVertical: 12 },
+  total: { fontFamily: fonts.semibold, fontSize: 13, color: colors.bosque },
+  session: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  time: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  timeText: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  kicks: { fontFamily: fonts.bold, fontSize: 15, color: colors.carmin },
+  duration: { fontFamily: fonts.regular, fontSize: 12, color: colors.mutedSoft },
 });
