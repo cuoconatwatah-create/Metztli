@@ -132,7 +132,9 @@ $DOCKER run -d --name caddy --restart unless-stopped --network host \
 # ── 5. Puertos internos solo en localhost ────────────────────────────────────
 say "5/5 Cerrando al exterior los puertos internos de Supabase"
 cd "$BASE"
-sed -i -E 's/^(\s+- )(\$\{(KONG_HTTP_PORT|KONG_HTTPS_PORT|POSTGRES_PORT|POOLER_PROXY_PORT_TRANSACTION)\}:)/\1127.0.0.1:\2/' docker-compose.yml
+# Todo puerto que Docker publica (gateway, pooler, etc.) queda solo en 127.0.0.1; Caddy llega por ahí.
+# La regla es general porque cada versión de Supabase nombra distinto la variable del puerto.
+sed -i -E 's/^(\s+- )(\$\{.*\}:[0-9]+(\/tcp|\/udp)?)\s*$/\1127.0.0.1:\2/' docker-compose.yml
 $DOCKER compose up -d >/dev/null 2>&1
 echo "   Puertos publicados por Docker (deben decir 127.0.0.1):"
 $DOCKER ps --format '   {{.Names}}  {{.Ports}}' | grep -E ':[0-9]+->' | cut -c1-110 || echo "   (ninguno)"
