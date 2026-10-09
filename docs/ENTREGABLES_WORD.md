@@ -34,16 +34,16 @@
 * **Resumen sin riesgo (solo lectura):** `infra/azure/7-ver-base.sh` muestra tablas, filas y cuentas con el correo enmascarado, sin abrir el SSH.
 * **Como en la web de Supabase:** `infra/azure/8-studio.sh on` enciende Supabase Studio en `https://studio.57-156-57-186.sslip.io`, con usuario y contraseña. Está apagado por defecto y se apaga con `off`.
 
-#### Prueba en teléfono (completar antes de presentar)
-- [ ] Descargar el APK desde la landing e instalarlo
-- [ ] Abrir la app y crear una cuenta aceptando la política de privacidad
+#### Prueba en teléfono
+- [x] Descargar el APK desde la landing e instalarlo
+- [x] Abrir la app y crear una cuenta aceptando la política de privacidad
 - [ ] Registrar un día y activar el respaldo
 - [ ] Ver la fila nueva en la base de datos de Azure (Studio o `7-ver-base.sh`)
 - [ ] Pedir una demo en la landing y verla en el panel
 
 ---
 
-### TABLA RESUMEN DE ENTREGABLES (RÚBRICA DE DESARROLLO)
+### ENTREGABLES DE SPRINTS ANTERIORES (documentación de referencia)
 
 | # | Entregable Oficial | Descripción Rápida | Enlace en GitHub / Recurso |
 | :-: | :--- | :--- | :--- |
@@ -53,11 +53,10 @@
 | **4** | **Diseño de la Interfaz (3 pantallas)** | Implementación en código y navegación de al menos 3 pantallas clave. | https://github.com/cuoconatwatah-create/Metztli/blob/main/docs/INTERFAZ_Y_DESARROLLO.md |
 | **5** | **Funcionalidades del Reto** | Funciones que atienden la problemática de salud en la Costa Caribe. | https://github.com/cuoconatwatah-create/Metztli/blob/main/docs/FUNCIONALIDADES_DEL_RETO.md |
 | **6** | **Diagramación de la Base de Datos** | Modelo gráfico ER de tablas, relaciones y estructura de datos. | https://github.com/cuoconatwatah-create/Metztli/blob/main/docs/DIAGRAMA_BASE_DATOS.md |
-| **7** | **Video Demo** | Grabación corta mostrando el sistema en funcionamiento. | [PEGAR ENLACE DEL VIDEO AQUÍ] |
 
 ---
 
-### DETALLE DE CADA ENTREGABLE
+### DETALLE DE LA DOCUMENTACIÓN DE REFERENCIA
 
 #### 1. README
 * **Criterio Evaluado:** Documento inicial que explique de forma breve el propósito del proyecto, cómo instalarlo y ejecutarlo.
@@ -140,15 +139,3 @@
   - **Estructura de Datos Local (SQLite - `metztli.db`):** 9 tablas detalladas (`user_profile`, `cycles`, `daily_logs`, `kick_counter_logs`, `user_cycle_logs`, `directory_contacts`, `forum_posts`, `myths`, `offline_faqs`).
   - **Diccionario de datos exhaustivo:** Tipos de campos, restricciones (`CHECK`, `UNIQUE`, `PRIMARY KEY`), valores por defecto y propósitos de uso.
   - **Protocolo de Sincronización Offline:** Manejo de colisiones idempotentes con `local_uuid` y bandera `is_synced`.
-
----
-
-#### 7. Video Demo
-* **Criterio Evaluado:** Grabación corta mostrando el sistema en funcionamiento.
-* **Enlace de la Grabación:**
-  `[PEGAR AQUÍ EL ENLACE DEL VIDEO DEMO - YouTube / Google Drive / Loom / Vimeo]`
-* **Contenido recomendado en la grabación (2 a 3 minutos):**
-  1. Navegación fluida entre las 3 pantallas principales.
-  2. Demostración del cambio de idioma a Miskitu y Creole en tiempo real.
-  3. Demostración de reproducción de voz con el botón *"Escuchar consejo de hoy"*.
-  4. Demostración de la vista de Triage de Emergencias y activación del botón de auxilio SMS.
