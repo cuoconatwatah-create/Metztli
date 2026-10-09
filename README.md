@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.10-8B2635?style=for-the-badge)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.11-8B2635?style=for-the-badge)
 ![React Native](https://img.shields.io/badge/React_Native-0.74-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Expo SDK](https://img.shields.io/badge/Expo_SDK-51.0-000020?style=for-the-badge&logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -240,7 +240,7 @@ flowchart LR
 | :--- | :--- | :--- |
 | **80** (HTTP) | Abierto | Entrada por la IP directa y redirección a HTTPS |
 | **443** (HTTPS) | Abierto | Landing, panel, app web y API |
-| 22 (SSH) | **Cerrado** | Solo se abre para mantenimiento (`az vm open-port -g metztli-rg -n metztli-vm --port 22 --priority 900`) y se vuelve a cerrar |
+| 22 (SSH) | **Cerrado** | No hace falta para que la app funcione. El mantenimiento se hace con `az vm run-command` (sin SSH); si hiciera falta, se abre con `az vm open-port -g metztli-rg -n metztli-vm --port 22 --priority 900` y se vuelve a cerrar |
 | 5432 / 6543 (base de datos) | **Cerrados** | La base de datos no es accesible desde internet |
 | 8000 / 8443 (gateway de Supabase) | **Cerrados** | Solo responde a Caddy, dentro de la misma máquina |
 
@@ -258,10 +258,20 @@ curl -fsSL https://raw.githubusercontent.com/cuoconatwatah-create/Metztli/main/i
 # 4) Crea la cuenta de Administrador para el panel (pide la contraseña sin mostrarla)
 bash /opt/metztli-src/infra/azure/4-crear-admin.sh tu@correo.com
 # 5) Opcional: publica un APK en el servidor sin entrar al panel
-bash /opt/metztli-src/infra/azure/5-publicar-apk.sh 2.0.10 <url-del-apk>
+bash /opt/metztli-src/infra/azure/5-publicar-apk.sh 2.0.11 <url-del-apk>
 ```
 
 La app Android se compila en GitHub al crear una etiqueta `v*`, usando las variables del repositorio `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`, que apuntan a este servidor. El APK sale en [Releases](https://github.com/cuoconatwatah-create/Metztli/releases/latest) y también se puede descargar desde la landing.
+
+### Dónde está cada cosa y cómo verla
+
+| Qué | Dónde está | Cómo verlo |
+| :--- | :--- | :--- |
+| **Base de datos** (PostgreSQL) | Dentro de la VM, en un contenedor de Docker (`supabase-db`). No tiene dirección pública | Sin abrir SSH, desde Azure Cloud Shell: `az vm run-command invoke -g metztli-rg -n metztli-vm --command-id RunShellScript --scripts "bash /opt/metztli-src/infra/azure/7-ver-base.sh" --query "value[0].message" -o tsv`. Muestra tablas, filas, cuentas (correo enmascarado) y versiones |
+| **Solicitudes de demo y versiones** | Tablas `demo_requests` y `app_releases` | Panel del equipo: `/admin.html` (rol Administrador) |
+| **Estructura de la base** | `backend/supabase/migrations/` y `setup_completo.sql` | En este repositorio; el diagrama está en [docs/DIAGRAMA_BASE_DATOS.md](docs/DIAGRAMA_BASE_DATOS.md) |
+| **APK** | Copia en el almacenamiento del servidor, y en cada Release de GitHub | Botón de descarga de la landing, o [Releases](https://github.com/cuoconatwatah-create/Metztli/releases/latest) |
+| **Empaquetado** | [Release de GitHub](https://github.com/cuoconatwatah-create/Metztli/releases/latest): `Metztli-x.y.z.apk`, `metztli-web-x.y.z.zip` (la app web compilada) y `metztli-azure-x.y.z.zip` (scripts, landing, panel y tablas) | Lo genera solo GitHub al publicar una etiqueta `v*` (flujos *Build Android APK* y *Package Release*) |
 
 ### El código en Azure es el de la rama principal
 

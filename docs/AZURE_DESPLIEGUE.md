@@ -176,6 +176,8 @@ El organizador pide, para apps nativas, tres piezas. Todas están hechas y se pu
 | **4** | **Integración completa**: la app guarda, lee y modifica datos reales en Azure | Las variables `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` del repositorio apuntan al servidor; el APK se compila con ellas | `sudo docker exec supabase-db psql -U supabase_admin -d postgres -c "select log_date, mood from public.daily_logs"` |
 | **5** | **Repositorio actualizado**: el código en Azure es el de `main` y el README explica el despliegue | `6-actualizar.sh` publica `main` y escribe `/version.json` con el commit exacto; el README tiene la sección *Despliegue en Azure* | `node scripts/verify-deploy.mjs` debe decir **IDÉNTICOS** |
 
+**Script 7** (`infra/azure/7-ver-base.sh`, solo lectura): muestra qué hay guardado en la base de datos sin abrir el SSH (tablas y filas, cuentas con el correo enmascarado, versiones publicadas y bitácora). Se lanza con `az vm run-command invoke … --scripts "bash /opt/metztli-src/infra/azure/7-ver-base.sh"`.
+
 **Script 6** (`infra/azure/6-actualizar.sh`): trae `main`, publica la landing, el panel y la app web (`/app/`), escribe `version.json`, configura Caddy para el nombre y la IP, y deja los puertos internos solo en `127.0.0.1`. Es el mismo que usa la instalación inicial, así que instalar y actualizar dan el mismo resultado. Se puede lanzar sin SSH:
 
 ```bash
