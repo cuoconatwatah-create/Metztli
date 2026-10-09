@@ -3,6 +3,43 @@
 **Plataforma de Salud Femenina Integral Intercultural (Offline-First)**  
 **Costa Caribe de Nicaragua (Miskitu, Creole, Español)**  
 **Repositorio Oficial en GitHub:** https://github.com/cuoconatwatah-create/Metztli  
+**Equipo:** CUOCONATWATAH  
+
+---
+
+### SPRINT FINAL: DESPLIEGUE EN AZURE
+
+**Todo corre en una máquina virtual de Azure** (Ubuntu, Docker, base de datos PostgreSQL propia con Supabase auto-hospedado). La app, la web y el panel hablan con ese servidor, no con `localhost`.
+
+| Recurso | Enlace |
+| :--- | :--- |
+| **Landing** (presenta la app, descarga y solicitud de demo) | https://57-156-57-186.sslip.io/ — también por IP: http://57.156.57.186/ |
+| **Descarga directa del APK 2.0.11** | https://57-156-57-186.sslip.io/storage/v1/object/public/app-releases/android/2.0.11/Metztli-2.0.11.apk |
+| **App web** (sin instalar) | https://57-156-57-186.sslip.io/app/ |
+| **Panel privado** (solicitudes y subida del APK; solo administradores) | https://57-156-57-186.sslip.io/admin.html |
+| **Prueba de que Azure = GitHub** | https://57-156-57-186.sslip.io/version.json |
+| **Cómo se desplegó** | [README, sección "Despliegue en Azure"](https://github.com/cuoconatwatah-create/Metztli/blob/main/README.md) y [docs/AZURE_DESPLIEGUE.md](https://github.com/cuoconatwatah-create/Metztli/blob/main/docs/AZURE_DESPLIEGUE.md) |
+
+#### Criterios del sprint final y su evidencia
+
+| # | Criterio | Evidencia |
+| :-: | :--- | :--- |
+| 1 | **Accesibilidad pública** | La landing, `/app/` y el panel abren desde cualquier navegador por la IP y por el nombre. El APK se descarga desde la landing |
+| 2 | **Seguridad básica** | Solo están abiertos los puertos **80 y 443**. El SSH (22) está cerrado y la base de datos (5432, 6543) y el resto de los puertos internos solo escuchan en `localhost`. Las tablas tienen reglas de seguridad por fila (RLS): sin sesión no se leen datos |
+| 3 | **Funcionamiento autónomo** | Una persona descarga el APK desde la landing, crea su cuenta (sin confirmar correo), registra datos y pide una demo, sin que el equipo toque el servidor |
+| 4 | **Integración completa** | La app guarda y lee en la base de datos de Azure: cuentas, registros de salud, respaldo y solicitudes de demo. Todo con las reglas de seguridad activas |
+| 5 | **Repositorio actualizado** | El código en Azure es el de la rama `main`. Se comprueba con `node scripts/verify-deploy.mjs`, que compara `version.json` del servidor con el commit de `main` en GitHub |
+
+#### Ver la base de datos
+* **Resumen sin riesgo (solo lectura):** `infra/azure/7-ver-base.sh` muestra tablas, filas y cuentas con el correo enmascarado, sin abrir el SSH.
+* **Como en la web de Supabase:** `infra/azure/8-studio.sh on` enciende Supabase Studio en `https://studio.57-156-57-186.sslip.io`, con usuario y contraseña. Está apagado por defecto y se apaga con `off`.
+
+#### Prueba en teléfono (completar antes de presentar)
+- [ ] Descargar el APK desde la landing e instalarlo
+- [ ] Abrir la app y crear una cuenta aceptando la política de privacidad
+- [ ] Registrar un día y activar el respaldo
+- [ ] Ver la fila nueva en la base de datos de Azure (Studio o `7-ver-base.sh`)
+- [ ] Pedir una demo en la landing y verla en el panel
 
 ---
 
