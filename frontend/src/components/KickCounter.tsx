@@ -1,250 +1,164 @@
-﻿// ─────────────────────────────────────────────────────────
-// Metztli — Kick Counter Component
+// ─────────────────────────────────────────────────────────
+// Metztli — Contador de pataditas
+// Una sesión: se toca el círculo con cada movimiento. La meta de referencia es sentir 10 movimientos
+// en 2 horas; si pasa más tiempo con menos, la app recomienda contactar al centro de salud.
 // ─────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { HeartPulse, Play, Square, AlertTriangle } from 'lucide-react-native';
+import { HeartPulse, Play, Square, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import GlassCard from './GlassCard';
+import { Card } from '@/components/ui';
+import { colors, fonts, radius, shadow } from '@/theme';
+import { useUi } from '@/i18n/ui';
 import type { KickCounterProps } from '@/types';
+
+const GOAL = 10;
+
+function clock(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
 
 export default function KickCounter({ onSessionComplete }: KickCounterProps) {
   const { t } = useTranslation();
+  const u = useUi();
   const [isActive, setIsActive] = useState(false);
   const [kickCount, setKickCount] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [elapsed, setElapsed] = useState(0); // segundos
 
-  // Timer effect
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isActive && startTime) {
-      interval = setInterval(() => {
-        const now = Date.now();
-        const diffMs = now - startTime;
-        setElapsedMinutes(Math.floor(diffMs / 60000));
-      }, 10000); // Check every 10 seconds for UI updates
-    }
-    return () => clearInterval(interval);
+    if (!isActive || !startTime) return;
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - startTime) / 1000)), 1000);
+    return () => clearInterval(id);
   }, [isActive, startTime]);
 
   const handleStart = () => {
     setIsActive(true);
     setKickCount(0);
     setStartTime(Date.now());
-    setElapsedMinutes(0);
+    setElapsed(0);
   };
 
   const handleStop = useCallback(() => {
     if (!isActive) return;
-    
-    // Stop the session
     setIsActive(false);
-    
-    // Calculate final duration
-    let finalDuration = 0;
-    if (startTime) {
-      finalDuration = Math.max(1, Math.floor((Date.now() - startTime) / 60000));
+
+    const minutes = startTime ? Math.max(1, Math.floor((Date.now() - startTime) / 60000)) : 0;
+
+    // Menos de 10 movimientos en 2 horas o más: se recomienda contactar al centro de salud
+    if (minutes >= 120 && kickCount < GOAL) {
+      Alert.alert(t('alarm.title'), t('kicks.alert_low'), [{ text: t('common.continue'), style: 'default' }]);
     }
 
-    // Check for low movement alert (less than 10 kicks in >= 120 minutes)
-    // Note: In real scenarios, users might not wait 2 hours, but if they do and kicks are low:
-    if (finalDuration >= 120 && kickCount < 10) {
-      Alert.alert(
-        t('alarm.title'),
-        t('kicks.alert_low'),
-        [{ text: t('common.continue'), style: 'default' }]
-      );
-    }
-
-    // Save session if at least 1 kick was recorded
     if (kickCount > 0) {
-      onSessionComplete(kickCount, finalDuration);
+      onSessionComplete(kickCount, minutes);
       Alert.alert(t('common.save'), t('kicks.session_saved'));
     }
 
-    // Reset state
     setKickCount(0);
     setStartTime(null);
-    setElapsedMinutes(0);
-
+    setElapsed(0);
   }, [isActive, startTime, kickCount, onSessionComplete, t]);
 
   const handleKick = () => {
-    if (isActive) {
-      setKickCount((prev) => prev + 1);
-    }
+    if (isActive) setKickCount((prev) => prev + 1);
   };
 
+  const reached = kickCount >= GOAL;
+  const lowMovement = isActive && elapsed >= 3600 && kickCount < GOAL;
+  const progress = Math.min(100, Math.round((kickCount / GOAL) * 100));
+
   return (
-    <GlassCard variant="default">
+    <Card style={{ gap: 16 }}>
       <View style={styles.header}>
-        <HeartPulse size={24} color="#8B2635" strokeWidth={2} />
+        <HeartPulse size={22} color={colors.carmin} />
         <Text style={styles.title}>{t('kicks.title')}</Text>
       </View>
 
-      <Text style={styles.instructions}>
-        {isActive ? t('kicks.tap_kick') : ''}
-      </Text>
-
-      <View style={styles.mainContent}>
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{kickCount}</Text>
-            <Text style={styles.statLabel}>{t('kicks.kick_count', { count: kickCount }).trim()}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{elapsedMinutes}</Text>
-            <Text style={styles.statLabel}>{t('kicks.duration', { minutes: '' }).trim()}</Text>
-          </View>
+      <View style={styles.stats}>
+        <View style={styles.stat}>
+          <Text style={styles.value}>{kickCount}</Text>
+          <Text style={styles.label}>{u('Pataditas')}</Text>
         </View>
+        <View style={styles.divider} />
+        <View style={styles.stat}>
+          <Text style={styles.value}>{clock(elapsed)}</Text>
+          <Text style={styles.label}>{u('Tiempo')}</Text>
+        </View>
+      </View>
 
+      <View>
+        <View style={styles.track} accessibilityLabel={u('{{n}} de {{goal}} pataditas', { n: kickCount, goal: GOAL })}>
+          <View style={[styles.fill, { width: `${progress}%` }, reached && { backgroundColor: colors.bosque }]} />
+        </View>
+        <Text style={styles.goal}>{u('Meta: 10 movimientos en 2 horas')}</Text>
+      </View>
+
+      <View style={{ alignItems: 'center', gap: 12 }}>
+        <Text style={styles.hint}>{isActive ? u('Toca el círculo cada vez que sientas un movimiento') : u('Toca el círculo para empezar a contar')}</Text>
         <TouchableOpacity
-          style={[styles.bigButton, isActive ? styles.bigButtonActive : styles.bigButtonInactive]}
+          style={[styles.big, isActive ? styles.bigActive : styles.bigIdle]}
           onPress={isActive ? handleKick : handleStart}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={isActive ? t('kicks.tap_kick') : u('Iniciar conteo')}
         >
           {isActive ? (
-            <View style={styles.buttonInner}>
-              <HeartPulse size={48} color="#FFF" strokeWidth={2} />
-            </View>
+            <HeartPulse size={52} color={colors.white} />
           ) : (
-            <View style={styles.buttonInner}>
-              <Play size={32} color="#FFF" strokeWidth={2} style={{ marginLeft: 4 }} />
-              <Text style={styles.startButtonText}>{t('kicks.start_session')}</Text>
+            <View style={{ alignItems: 'center', gap: 6 }}>
+              <Play size={34} color={colors.white} />
+              <Text style={styles.bigText}>{u('Iniciar conteo')}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
 
+      {reached && isActive && (
+        <View style={[styles.note, { backgroundColor: '#E6F2E8' }]}>
+          <CheckCircle2 size={18} color={colors.bosque} />
+          <Text style={[styles.noteText, { color: colors.bosque }]}>{u('¡Llegaste a 10 pataditas! Ya puedes finalizar la sesión.')}</Text>
+        </View>
+      )}
+
+      {lowMovement && (
+        <View style={[styles.note, { backgroundColor: colors.blush }]}>
+          <AlertTriangle size={18} color={colors.carmin} />
+          <Text style={[styles.noteText, { color: colors.carmin }]}>{t('kicks.alert_low')}</Text>
+        </View>
+      )}
+
       {isActive && (
-        <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
-          <Square size={20} color="#1A1A1A" strokeWidth={2} />
-          <Text style={styles.stopButtonText}>{t('kicks.stop_session')}</Text>
+        <TouchableOpacity style={styles.stop} onPress={handleStop} accessibilityRole="button">
+          <Square size={18} color={colors.carbon} />
+          <Text style={styles.stopText}>{u('Terminar y guardar')}</Text>
         </TouchableOpacity>
       )}
-      
-      {/* Alert note visible when active */}
-      {isActive && elapsedMinutes >= 60 && kickCount < 10 && (
-         <View style={styles.alertNote}>
-            <AlertTriangle size={16} color="#8B2635" />
-            <Text style={styles.alertNoteText}>{t('kicks.alert_low')}</Text>
-         </View>
-      )}
-    </GlassCard>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  instructions: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-    minHeight: 20,
-  },
-  mainContent: {
-    alignItems: 'center',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 16,
-    paddingVertical: 16,
-  },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: 'rgba(44, 61, 48, 0.1)',
-  },
-  statValue: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#8B2635',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textTransform: 'uppercase',
-    marginTop: 4,
-  },
-  bigButton: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
-    elevation: 8,
-    marginBottom: 16,
-  },
-  bigButtonInactive: {
-    backgroundColor: '#2C3D30', // Bosque
-    shadowColor: 'rgba(44, 61, 48, 0.4)',
-  },
-  bigButtonActive: {
-    backgroundColor: '#8B2635', // Carmín
-    shadowColor: 'rgba(139, 38, 53, 0.4)',
-  },
-  buttonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  startButtonText: {
-    color: '#FFF',
-    fontWeight: '700',
-    marginTop: 8,
-    fontSize: 14,
-  },
-  stopButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(44, 61, 48, 0.05)',
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  stopButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  alertNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'rgba(139, 38, 53, 0.1)',
-    borderRadius: 8,
-  },
-  alertNoteText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#8B2635',
-    fontWeight: '500',
-  }
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  title: { fontFamily: fonts.display, fontSize: 18, color: colors.carbon },
+  stats: { flexDirection: 'row', backgroundColor: colors.avena, borderRadius: radius.md, paddingVertical: 14 },
+  stat: { flex: 1, alignItems: 'center' },
+  divider: { width: 1, backgroundColor: colors.line },
+  value: { fontFamily: fonts.display, fontSize: 32, color: colors.carmin },
+  label: { fontFamily: fonts.semibold, fontSize: 10, letterSpacing: 1.2, color: colors.mutedSoft, textTransform: 'uppercase', marginTop: 2 },
+  track: { height: 8, borderRadius: 4, backgroundColor: colors.line, overflow: 'hidden' },
+  fill: { height: '100%', backgroundColor: colors.carmin, borderRadius: 4 },
+  goal: { fontFamily: fonts.regular, fontSize: 11, color: colors.mutedSoft, marginTop: 6, textAlign: 'center' },
+  hint: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, textAlign: 'center' },
+  big: { width: 150, height: 150, borderRadius: 75, alignItems: 'center', justifyContent: 'center', ...shadow.glow },
+  bigIdle: { backgroundColor: colors.bosque },
+  bigActive: { backgroundColor: colors.carmin },
+  bigText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
+  note: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: radius.sm },
+  noteText: { flex: 1, fontFamily: fonts.medium, fontSize: 12, lineHeight: 18 },
+  stop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.avena },
+  stopText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.carbon },
 });

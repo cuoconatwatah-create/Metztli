@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
+import { buildSmsUrl } from '@/data/emergency';
 import {
   Sparkles,
   Volume2,
@@ -170,18 +171,17 @@ export default function PregnancyScreen() {
     }
   };
 
-  // Manejador del botón de auxilio SMS nativo hacia la partera de la Casa Materna
+  // Botón de auxilio por SMS: abre los mensajes con el texto listo y SIN destinatario, para que la
+  // persona elija a su partera o a alguien de confianza (no existe un número único para todas).
   const handleSendEmergencySMS = async (symptom: SymptomAccordionItem) => {
-    const phoneNumber = '+50588880000'; // Partera comunitaria / Casa Materna
-    const smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(symptom.smsMessage)}`;
+    const smsUrl = buildSmsUrl(symptom.smsMessage);
 
     try {
       const canOpen = await Linking.canOpenURL(smsUrl);
       if (canOpen) {
         await Linking.openURL(smsUrl);
       } else {
-        // Fallback para dispositivos o emuladores
-        await Linking.openURL(`sms:${phoneNumber}`);
+        throw new Error('sms-no-disponible');
       }
     } catch (error) {
       Alert.alert(
