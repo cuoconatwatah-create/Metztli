@@ -5,6 +5,22 @@
 
 ---
 
+## 0. Instalar la app en Android
+
+1. Descarga el archivo **.apk** desde la landing (`https://57-156-57-186.sslip.io/`) o desde [Releases](https://github.com/cuoconatwatah-create/Metztli/releases/latest), preferiblemente con **Wi-Fi**.
+2. Ábrelo. Android pedirá permiso para *instalar apps desconocidas*: acéptalo para el navegador o gestor de archivos que lo abrió.
+3. Si **Play Protect** avisa, elige *Más detalles → Instalar de todos modos* (la app aún no está en Play Store).
+
+**Si no se instala:**
+
+| Síntoma | Causa y solución |
+| :--- | :--- |
+| "Paquete no válido" o "problema al analizar el paquete" | La descarga se cortó y el archivo quedó dañado. Vuelve a descargarlo con Wi-Fi. |
+| "No hay espacio" | Necesita unos 300 MB libres. Borra fotos o apps que no uses. |
+| No deja ni intentarlo (sobre todo en Samsung) | Desactiva *Auto Blocker* en Ajustes → Seguridad y privacidad y permite instalar apps desconocidas. |
+| "La app no está instalada" al actualizar | Desinstala la versión anterior e instala de nuevo. Lo guardado solo en el teléfono se borra; el respaldo en la nube no. |
+| El teléfono es muy antiguo | Se necesita **Android 6.0** o superior. |
+
 ## 1. Primeros pasos
 
 1. **Bienvenida**: toca **COMENZAR (Usuario)**. Si ya tienes cuenta, **Iniciar sesión**. Si eres pareja o familiar, toca **ACOMPAÑANTE**.

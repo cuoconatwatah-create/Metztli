@@ -166,7 +166,26 @@ El organizador pide, para apps nativas, tres piezas. Todas están hechas y se pu
 
 ---
 
-## 9. Seguridad y límites
+## 9. Sprint final: los 5 criterios y cómo se comprueban
+
+| # | Criterio | Cómo se cumple | Cómo se comprueba |
+| :-: | :--- | :--- | :--- |
+| **1** | **Accesibilidad pública**: la web abre desde cualquier navegador usando la IP de Azure; la app instalada abre y funciona | Caddy sirve la landing, el panel y la app web por **http://57.156.57.186/** y por **https://57-156-57-186.sslip.io/**. El APK se descarga de la landing | Abrir cualquiera de las dos direcciones. `curl -I http://57.156.57.186/` responde 200 |
+| **2** | **Seguridad básica**: sin puertos críticos expuestos | Firewall de Azure con solo 80 y 443; base de datos y gateway de Supabase solo en `127.0.0.1`; SSH cerrado | `az network nsg rule list -g metztli-rg --nsg-name metztli-vmNSG -o table` y probar los puertos 22, 5432, 6543, 8000 y 8443 desde fuera: sin respuesta |
+| **3** | **Funcionamiento autónomo**: una persona completa el proceso sola | Registro con correo sin confirmación, etapa, registro del día, respaldo y consulta; Docker reinicia todo solo | Recorrido completo con el APK; las filas aparecen en `daily_logs` |
+| **4** | **Integración completa**: la app guarda, lee y modifica datos reales en Azure | Las variables `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` del repositorio apuntan al servidor; el APK se compila con ellas | `sudo docker exec supabase-db psql -U supabase_admin -d postgres -c "select log_date, mood from public.daily_logs"` |
+| **5** | **Repositorio actualizado**: el código en Azure es el de `main` y el README explica el despliegue | `6-actualizar.sh` publica `main` y escribe `/version.json` con el commit exacto; el README tiene la sección *Despliegue en Azure* | `node scripts/verify-deploy.mjs` debe decir **IDÉNTICOS** |
+
+**Script 6** (`infra/azure/6-actualizar.sh`): trae `main`, publica la landing, el panel y la app web (`/app/`), escribe `version.json`, configura Caddy para el nombre y la IP, y deja los puertos internos solo en `127.0.0.1`. Es el mismo que usa la instalación inicial, así que instalar y actualizar dan el mismo resultado. Se puede lanzar sin SSH:
+
+```bash
+az vm run-command invoke -g metztli-rg -n metztli-vm --command-id RunShellScript \
+  --scripts "bash /opt/metztli-src/infra/azure/6-actualizar.sh"
+```
+
+---
+
+## 10. Seguridad y límites
 
 - **Correo de confirmación apagado**: el script deja `ENABLE_EMAIL_AUTOCONFIRM=true` para no depender de un servidor de correo. Cualquier persona puede crear una cuenta con un correo que no es suyo. Para producción, configura SMTP y ponlo en `false` en `/opt/metztli-supabase/.env`, y reinicia con `sudo docker compose up -d`.
 - **Claves nuevas**: el servidor propio usa sus propias claves, distintas a las de Supabase en la nube. `CREDENCIALES.txt` tiene secretas (`POSTGRES_PASSWORD`, `JWT_SECRET`, `SERVICE_ROLE_KEY`): **no las subas a GitHub** ni las compartas. Solo la `ANON_KEY` va en la app.

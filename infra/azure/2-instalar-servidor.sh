@@ -10,7 +10,7 @@
 #   1. Prepara el sistema: swap de 2 GB, Docker, Node.js 20 y Python 3.
 #   2. Descarga Supabase (la versión para instalar en servidor propio) y genera
 #      claves y contraseñas nuevas, solo para este servidor.
-#   3. Publica todo por HTTPS en  https://<IP>.sslip.io  (certificado automático
+#   3. Publica todo por HTTPS en  https://<IP>.sslip.io  y por la IP directa (certificado automático
 #      con Caddy). sslip.io es un nombre que apunta a tu IP pública:
 #        /            landing page de Metztli (descarga del APK y formulario de demo)
 #        /admin.html  panel privado (solicitudes de demo y subida de versiones)
@@ -144,39 +144,9 @@ for i in $(seq 1 60); do
 done
 $DOCKER exec supabase-db pg_isready -U postgres -h localhost
 
-# Landing page y panel (archivos estáticos) con la dirección del servidor ya puesta
-mkdir -p "$BASE/landing"
-cp -rf "$SRC/landing/." "$BASE/landing/"
-ANON_FOR_LANDING="$(getenv ANON_KEY)"
-cat > "$BASE/landing/config.js" <<EOF
-window.METZTLI_CONFIG = {
-  supabaseUrl: 'https://$HOST',
-  supabaseAnonKey: '$ANON_FOR_LANDING',
-  fallbackDownloadUrl: 'https://github.com/cuoconatwatah-create/Metztli/releases/latest',
-  webAppUrl: 'https://cuoconatwatah-create.github.io/Metztli/',
-};
-EOF
-
-# HTTPS con Caddy (certificado automático): la API de Supabase por rutas y la landing en /
-cat > "$BASE/Caddyfile" <<EOF
-$HOST {
-  encode gzip
-  @api path /auth/v1/* /rest/v1/* /storage/v1/* /realtime/v1/* /graphql/v1/* /functions/v1/*
-  handle @api {
-    reverse_proxy 127.0.0.1:8000 {
-      flush_interval -1
-    }
-  }
-  handle {
-    root * /srv/landing
-    file_server
-  }
-}
-EOF
-$DOCKER rm -f caddy >/dev/null 2>&1 || true
-$DOCKER run -d --name caddy --restart unless-stopped --network host \
-  -v "$BASE/Caddyfile:/etc/caddy/Caddyfile:ro" -v "$BASE/landing:/srv/landing:ro" \
-  -v caddy_data:/data -v caddy_config:/config caddy:2
+# Landing, panel, app web, HTTPS (Caddy) y puertos internos cerrados: lo hace el script 6,
+# el mismo que se usa después para actualizar. Así instalar y actualizar dan el mismo resultado.
+BRANCH="$BRANCH" REPO="$REPO" bash "$SRC/infra/azure/6-actualizar.sh"
 
 # ── 6. Tablas de Metztli ─────────────────────────────────────────────────────
 say "6/6 Creando las tablas, roles y seguridad de Metztli"
