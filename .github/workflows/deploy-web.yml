@@ -54,6 +54,19 @@ jobs:
           touch dist/.nojekyll      # Pages ignora carpetas con "_": sin esto no carga /_expo
           cp dist/index.html dist/404.html   # recarga de cualquier ruta vuelve a la app
 
+      - name: Añadir la landing page y el panel del equipo (/landing/)
+        run: |
+          mkdir -p frontend/dist/landing
+          cp -r landing/. frontend/dist/landing/
+          cat > frontend/dist/landing/config.js <<EOF
+          window.METZTLI_CONFIG = {
+            supabaseUrl: '${EXPO_PUBLIC_SUPABASE_URL}',
+            supabaseAnonKey: '${EXPO_PUBLIC_SUPABASE_ANON_KEY}',
+            fallbackDownloadUrl: 'https://github.com/${{ github.repository }}/releases/latest',
+            webAppUrl: 'https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/',
+          };
+          EOF
+
       - name: Subir el sitio
         uses: actions/upload-pages-artifact@v3
         with:

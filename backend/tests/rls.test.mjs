@@ -123,6 +123,57 @@ await as('anon', null, async () => {
 });
 console.log('✓ sin sesión: lee y publica anónimo; nada más');
 
+// ── LANDING: solicitudes de demo y versiones de la app ──
+await as('anon', null, async () => {
+  await q(`INSERT INTO demo_requests (name, email, organization, message, accepted_privacy) VALUES ('Ana Prueba','ana@example.com','Clínica','Hola',true)`);
+  await fails(q(`INSERT INTO demo_requests (name, email, accepted_privacy) VALUES ('A','a@b.co',true)`), /check constraint/);
+  await fails(q(`INSERT INTO demo_requests (name, email, accepted_privacy) VALUES ('Ana','no-es-correo',true)`), /check constraint/);
+  await fails(q(`INSERT INTO demo_requests (name, email, accepted_privacy) VALUES ('Ana','a@b.co',false)`), /check constraint|row-level security/);
+  await fails(q(`INSERT INTO demo_requests (name, email, accepted_privacy, status) VALUES ('Ana','a@b.co',true,'contactada')`), /row-level security/);
+  await fails(q('SELECT * FROM demo_requests'), /permission denied/);
+  await fails(q(`UPDATE demo_requests SET status='descartada'`), /permission denied/);
+  assert.equal((await q('SELECT * FROM app_releases')).rows.length, 0, 'lee las versiones (vacío al inicio)');
+  await fails(q(`INSERT INTO app_releases (platform, version, download_url) VALUES ('android','1.0','https://x')`), /permission denied/);
+  await fails(q('SELECT set_current_release(gen_random_uuid())'), /permission denied/);
+});
+console.log('✓ sin sesión: envía solicitudes válidas; no lee ni cambia nada más');
+
+await as('authenticated', U1, async () => {
+  assert.equal((await q('SELECT * FROM demo_requests')).rows.length, 0, 'una usuaria no ve solicitudes');
+  assert.equal((await q(`UPDATE demo_requests SET status='descartada' RETURNING id`)).rows.length, 0, 'ni las cambia');
+  await fails(q(`INSERT INTO app_releases (platform, version, download_url) VALUES ('android','9.9','https://x')`), /row-level security/);
+  await fails(q('SELECT set_current_release(gen_random_uuid())'), /Solo una administradora/);
+});
+await as('authenticated', AUD, async () => {
+  assert.equal((await q('SELECT * FROM demo_requests')).rows.length, 0, 'la auditoría no ve solicitudes (datos personales)');
+});
+console.log('✓ usuaria y auditoría: no ven solicitudes ni publican versiones');
+
+await as('authenticated', ADM, async () => {
+  const reqs = (await q('SELECT id, status FROM demo_requests')).rows;
+  assert.equal(reqs.length, 1, 'el administrador ve las solicitudes');
+  assert.equal(reqs[0].status, 'nueva');
+  await q(`UPDATE demo_requests SET status='contactada' WHERE id='${reqs[0].id}'`);
+  const a = (await q(`INSERT INTO app_releases (platform, version, file_path, file_size) VALUES ('android','2.0.7','android/2.0.7/Metztli-2.0.7.apk',86000000) RETURNING id`)).rows[0].id;
+  const b = (await q(`INSERT INTO app_releases (platform, version, download_url) VALUES ('android','2.0.8','https://example.com/Metztli-2.0.8.apk') RETURNING id`)).rows[0].id;
+  await fails(q(`INSERT INTO app_releases (platform, version) VALUES ('android','sin-archivo')`), /check constraint/);
+  await q(`SELECT set_current_release('${a}')`);
+  await q(`SELECT set_current_release('${b}')`);
+  const cur = (await q(`SELECT version FROM app_releases WHERE platform='android' AND is_current`)).rows;
+  assert.deepEqual(cur.map((r) => r.version), ['2.0.8'], 'solo una versión actual por plataforma');
+  await fails(q(`UPDATE app_releases SET is_current = true WHERE id='${a}'`), /unique|duplicate/);
+});
+await as('anon', null, async () => {
+  const cur = (await q(`SELECT version, download_url FROM app_releases WHERE platform='android' AND is_current`)).rows;
+  assert.equal(cur.length, 1); assert.equal(cur[0].version, '2.0.8');
+});
+const logs = (await db.query(`SELECT target_table, action, details FROM audit_log WHERE target_table IN ('demo_requests','app_releases') ORDER BY id`)).rows;
+assert.ok(logs.some((l) => l.target_table === 'demo_requests' && l.action === 'UPDATE'), 'cambio de estado registrado');
+assert.ok(logs.some((l) => l.target_table === 'app_releases' && l.action === 'INSERT'), 'versión publicada registrada');
+assert.ok(!logs.some((l) => l.action === 'INSERT' && l.target_table === 'demo_requests'), 'enviar una solicitud no se registra');
+assert.ok(logs.every((l) => !/@|Ana/.test(JSON.stringify(l.details))), 'la bitácora no copia datos personales');
+console.log('✓ administrador: gestiona solicitudes y versiones; una sola versión actual; bitácora sin datos personales');
+
 // La bitácora es inmutable incluso para la dueña del proyecto
 await fails(db.exec(`UPDATE audit_log SET action='x'`), /solo escritura/);
 await fails(db.exec(`DELETE FROM audit_log`), /solo escritura/);
