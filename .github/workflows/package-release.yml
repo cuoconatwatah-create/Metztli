@@ -19,6 +19,8 @@ jobs:
     env:
       EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      # La app web se publica en el servidor de Azure bajo /app/ (ver infra/azure/6-actualizar.sh)
+      EXPO_BASE_URL: /app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

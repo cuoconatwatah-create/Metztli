@@ -39,7 +39,7 @@ gitGraph
 | `git push -u origin feat/figma-ui-supabase` | **Push**: subir la rama a GitHub |
 | `git pull origin main` | **Pull**: traer los cambios de `main` antes de fusionar y después del merge |
 | `git log --oneline` | Revisar el historial |
-| `git tag v2.0.9 && git push origin v2.0.9` | Crear una versión y publicar su Release con el APK |
+| `git tag v2.0.10 && git push origin v2.0.10` | Crear una versión y publicar su Release con el APK |
 
 ---
 
@@ -98,7 +98,9 @@ flowchart LR
 
 ## 4. Versionado semántico (SemVer)
 
-`MAJOR.MINOR.PATCH` — versión actual **2.0.9**, sincronizada en `frontend/package.json` y `frontend/app.json`.
+El **código de versión de Android** se calcula solo a partir de la versión (`MAJOR×10000 + MINOR×100 + PATCH`, por ejemplo 2.0.10 → 20010) en `frontend/app.config.js`, para que cada compilación se instale como actualización de la anterior.
+
+`MAJOR.MINOR.PATCH` — versión actual **2.0.10**, sincronizada en `frontend/package.json` y `frontend/app.json`.
 
 - **MAJOR (2)**: arquitectura offline-first trilingüe.
 - **MINOR (0)**: módulos de etapas, Desmitificador, Tribu y acompañante.

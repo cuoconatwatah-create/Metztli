@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.9-8B2635?style=for-the-badge)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-2.0.10-8B2635?style=for-the-badge)
 ![React Native](https://img.shields.io/badge/React_Native-0.74-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Expo SDK](https://img.shields.io/badge/Expo_SDK-51.0-000020?style=for-the-badge&logo=expo&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -141,11 +141,15 @@ flowchart LR
 Metztli/
 ├── .github/workflows/
 │   ├── build-apk.yml            # APK en cada push a main (+ Release en etiquetas v*)
-│   └── deploy-web.yml           # Web demo en GitHub Pages
+│   ├── deploy-web.yml           # Web demo y landing en GitHub Pages
+│   └── package-release.yml      # Paquetes web y Azure adjuntos al Release
 ├── backend/
-│   └── supabase/
-│       ├── migrations/          # 000–006: tablas, RLS, roles, auditoría
-│       └── setup_completo.sql   # Todo junto, para pegar en el SQL Editor
+│   ├── supabase/
+│   │   ├── migrations/          # 000–007: tablas, RLS, roles, auditoría, solicitudes de demo y versiones
+│   │   └── setup_completo.sql   # Todo junto (lo aplica el servidor de Azure)
+│   └── tests/rls.test.mjs       # Pruebas de seguridad sobre PostgreSQL real
+├── infra/azure/                 # Scripts 1–6: crear la VM, instalar, evidencias, administrador, APK y actualizar
+├── landing/                     # Landing page, formulario de demo y panel del equipo (/admin.html)
 ├── docs/                        # Entregables (ver tabla más abajo)
 ├── frontend/
 │   ├── App.tsx                  # Proveedores (etapa, rol), navegación y arranque
@@ -162,6 +166,8 @@ Metztli/
 │       ├── data/                # Artículos y audios del Desmitificador
 │       └── theme/               # Colores, tipografía, radios y sombras
 ├── scripts/check-supabase.mjs   # Verifica conexión, tablas, RLS y roles
+├── scripts/verify-deploy.mjs    # Comprueba que Azure corre el mismo commit que main
+├── scripts/serve-landing.mjs    # Servidor local para probar la landing
 └── README.md
 ```
 
@@ -197,6 +203,86 @@ npx expo start -c        # móvil con Expo Go (escanea el QR)
 - **Local:** `npx expo prebuild --platform android --clean && cd android && ./gradlew assembleRelease`
 
 Despliegue para presentar: [Despliegue y Presentación](docs/DESPLIEGUE_Y_PRESENTACION.md). Servidor propio en Azure, **landing page, formulario de demo y panel del equipo** (con subida del APK): [Despliegue en Azure](docs/AZURE_DESPLIEGUE.md#8-landing-page-solicitudes-de-demo-y-panel-del-equipo-segundo-sprint). El código está en [`landing/`](landing/).
+
+---
+
+## ☁️ Despliegue en Azure (cómo quedó)
+
+Metztli corre en **un servidor propio en Azure**: una máquina virtual con **Supabase completo** (base de datos PostgreSQL, cuentas y almacenamiento de archivos), la **landing page**, el **formulario de demo**, el **panel del equipo** y la **app web**. La app Android guarda y lee sus datos en ese servidor.
+
+```mermaid
+flowchart LR
+    U["Persona usuaria<br/>navegador o app Android"] -->|"HTTPS 443 · HTTP 80"| FW
+    subgraph AZ["Azure · Chile Central · VM Ubuntu 22.04 (B2as_v2)"]
+        FW["Firewall de Azure<br/>solo 80 y 443"] --> CADDY["Caddy<br/>HTTPS automatico"]
+        CADDY -->|"/ · /admin.html · /app/"| WEB["Archivos estaticos<br/>landing, panel y app web"]
+        CADDY -->|"/auth · /rest · /storage"| KONG["Supabase (gateway)<br/>solo localhost"]
+        KONG --> PG[("PostgreSQL<br/>solo localhost")]
+    end
+    GH["GitHub · rama main"] -.->|"6-actualizar.sh"| AZ
+```
+
+### Qué hay y dónde
+
+| Pieza | Dirección |
+| :--- | :--- |
+| **Landing** (presenta la app, descarga del APK, formulario de demo) | https://57-156-57-186.sslip.io/ · también por la IP: http://57.156.57.186/ |
+| **Panel del equipo** (solicitudes de demo y subida de versiones; solo rol Administrador) | https://57-156-57-186.sslip.io/admin.html |
+| **App web** (la misma app, en el navegador) | https://57-156-57-186.sslip.io/app/ |
+| **Versión publicada** (versión y commit exactos) | https://57-156-57-186.sslip.io/version.json |
+| **API y base de datos** (la usa la app) | https://57-156-57-186.sslip.io/auth/v1 · /rest/v1 · /storage/v1 |
+
+**Máquina virtual:** `metztli-vm` · grupo de recursos `metztli-rg` · región **Chile Central** · tamaño **Standard_B2as_v2** (2 CPU, 8 GB) · Ubuntu 22.04 · IP pública estática **57.156.57.186**. El nombre `57-156-57-186.sslip.io` apunta a esa IP y permite el certificado HTTPS gratuito de Let's Encrypt (Caddy lo renueva solo).
+
+### Seguridad básica: puertos
+
+| Puerto | Estado | Para qué |
+| :--- | :--- | :--- |
+| **80** (HTTP) | Abierto | Entrada por la IP directa y redirección a HTTPS |
+| **443** (HTTPS) | Abierto | Landing, panel, app web y API |
+| 22 (SSH) | **Cerrado** | Solo se abre para mantenimiento (`az vm open-port -g metztli-rg -n metztli-vm --port 22 --priority 900`) y se vuelve a cerrar |
+| 5432 / 6543 (base de datos) | **Cerrados** | La base de datos no es accesible desde internet |
+| 8000 / 8443 (gateway de Supabase) | **Cerrados** | Solo responde a Caddy, dentro de la misma máquina |
+
+Doble protección: el firewall de Azure solo deja pasar 80 y 443, y además Docker publica los puertos internos únicamente en `127.0.0.1`. Las claves del servidor se generaron al instalar y no están en el repositorio. Los datos de salud de cada persona están protegidos por reglas en la propia base de datos (RLS), y las pruebas están en `backend/tests/rls.test.mjs`.
+
+### Cómo se desplegó (reproducible)
+
+Todo está en [`infra/azure/`](infra/azure/); el paso a paso con la evidencia de cada entregable está en [docs/AZURE_DESPLIEGUE.md](docs/AZURE_DESPLIEGUE.md).
+
+```bash
+# 1) En Azure Cloud Shell: crea la VM (prueba regiones y tamaños; Azure para estudiantes recomienda Chile Central y B2as_v2)
+bash 1-crear-vm.sh
+# 2) Dentro de la VM: instala Docker, Supabase, las tablas (backend/supabase/setup_completo.sql) y publica la web
+curl -fsSL https://raw.githubusercontent.com/cuoconatwatah-create/Metztli/main/infra/azure/2-instalar-servidor.sh | bash
+# 4) Crea la cuenta de Administrador para el panel (pide la contraseña sin mostrarla)
+bash /opt/metztli-src/infra/azure/4-crear-admin.sh tu@correo.com
+# 5) Opcional: publica un APK en el servidor sin entrar al panel
+bash /opt/metztli-src/infra/azure/5-publicar-apk.sh 2.0.10 <url-del-apk>
+```
+
+La app Android se compila en GitHub al crear una etiqueta `v*`, usando las variables del repositorio `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`, que apuntan a este servidor. El APK sale en [Releases](https://github.com/cuoconatwatah-create/Metztli/releases/latest) y también se puede descargar desde la landing.
+
+### El código en Azure es el de la rama principal
+
+`6-actualizar.sh` trae `main` de GitHub, publica la web y escribe `/version.json` con la versión y el **commit exacto** publicados. Para comprobarlo:
+
+```bash
+node scripts/verify-deploy.mjs          # compara el commit de Azure con el último de main en GitHub
+```
+
+Debe terminar en **"IDÉNTICOS"**. Para actualizar Azure después de cambiar `main`: `bash /opt/metztli-src/infra/azure/6-actualizar.sh` (dentro de la VM, o con `az vm run-command invoke` sin abrir el SSH).
+
+### Funciona sin ayuda del equipo técnico
+
+Una persona puede hacer todo el recorrido sola: abrir la landing, descargar e instalar el APK, **crear su cuenta con correo y contraseña** (sin correo de confirmación), elegir su etapa, registrar su día, activar el respaldo y ver ese dato guardado en la base de Azure. Quien quiera conocer Metztli completa el formulario de demo y el equipo lo ve en el panel. Al reiniciar la VM, todos los servicios vuelven a levantarse solos (reinicio automático de Docker).
+
+### Límites y cuidados
+
+- Es **un solo servidor sin copias automáticas**; es una demostración, no un servicio de producción.
+- Corre con el **crédito de Azure para estudiantes**: si se acaba o se apaga la VM, el sitio deja de responder. La app Android sigue funcionando sin conexión con lo guardado en el teléfono.
+- La confirmación de correo está **apagada** para que el registro sea inmediato; cualquiera puede crear una cuenta. Para producción, conviene configurar un servidor de correo y activarla.
+- El nombre `sslip.io` es un servicio gratuito de terceros; la IP directa funciona sin él.
 
 ---
 
