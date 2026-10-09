@@ -66,6 +66,11 @@ jobs:
             echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a" >> gradle.properties
           fi
           grep "^reactNativeArchitectures" gradle.properties
+          # Esa opción solo filtra lo que se compila aquí; las librerías ya compiladas de otras piezas traen
+          # también x86. Este filtro las deja fuera del APK (verificado: el APK 2.0.10 aún las traía).
+          sed -i 's/defaultConfig {/defaultConfig {\n        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }/' app/build.gradle
+          grep -q abiFilters app/build.gradle || { echo "No se pudo aplicar el filtro de arquitecturas"; exit 1; }
+          grep -n abiFilters app/build.gradle
 
       - name: Build APK (Release)
         working-directory: ./frontend/android
